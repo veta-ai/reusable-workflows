@@ -1,111 +1,121 @@
-# name: CI - Release Branch (Release) - Lib
+name: CI - Release Branch (Release) - Lib
 
-# on:
-#   push:
-#     branches:
-#       - main
+on:
+  workflow_call:
+    inputs:
+    
+      java-version:
+        required: false
+        type: string
+        default: '21'
+    
+    secrets:
+      NEXUS_USERNAME:
+        required: true
+      NEXUS_PASSWORD:
+        required: true
 
-# jobs:
-#   deploy-lib-release:
-#     #if: github.event.pull_request.merged == true
-#     runs-on: ubuntu-latest
+jobs:
+  deploy-lib-release:
+    #if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
 
-#     steps:
-#       - uses: actions/checkout@v4
-#         with:
-#           persist-credentials: true
-#           ref: ${{ github.head_ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: ${{ github.head_ref }}
 
-#       - name: Set up JDK
-#         uses: actions/setup-java@v4
-#         with:
-#           java-version: '21'
-#           distribution: 'temurin'
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'temurin'
 
-#       - name: Cache Maven packages
-#         uses: actions/cache@v4
-#         with:
-#           path: ~/.m2
-#           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-#           restore-keys: ${{ runner.os }}-m2
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
 
-#       - name: Configure Maven settings.xml
-#         uses: s4u/maven-settings-action@v3.1.0
-#         with:
-#           servers: |
-#             [{ 
-#               "id": "nexus-releases",
-#               "username": "${{ secrets.NEXUS_USERNAME }}",
-#               "password": "${{ secrets.NEXUS_PASSWORD }}"
-#             }]
+      - name: Configure Maven settings.xml
+        uses: s4u/maven-settings-action@v3.1.0
+        with:
+          servers: |
+            [{ 
+              "id": "nexus-releases",
+              "username": "${{ secrets.NEXUS_USERNAME }}",
+              "password": "${{ secrets.NEXUS_PASSWORD }}"
+            }]
 
-#       - name: Detectar versão atual do pom.xml
-#         id: current-version
-#         run: |
-#           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-#           echo "Versão atual: $VERSION"
-#           echo "version=$VERSION" >> $GITHUB_OUTPUT
+      - name: Detectar versão atual do pom.xml
+        id: current-version
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Versão atual: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-#       - name: Remover sufixo RC e atualizar pom.xml
-#         if: contains(steps.current-version.outputs.version, '-RC')
-#         id: cleanup-version
-#         run: |
-#           FINAL_VERSION=$(echo "${{ steps.current-version.outputs.version }}" | sed 's/-RC[0-9]*//')
-#           echo "Versão final: $FINAL_VERSION"
-#           echo "final_version=$FINAL_VERSION" >> $GITHUB_OUTPUT
-#           mvn versions:set -DnewVersion=$FINAL_VERSION
-#           mvn versions:commit
+      - name: Remover sufixo RC e atualizar pom.xml
+        if: contains(steps.current-version.outputs.version, '-RC')
+        id: cleanup-version
+        run: |
+          FINAL_VERSION=$(echo "${{ steps.current-version.outputs.version }}" | sed 's/-RC[0-9]*//')
+          echo "Versão final: $FINAL_VERSION"
+          echo "final_version=$FINAL_VERSION" >> $GITHUB_OUTPUT
+          mvn versions:set -DnewVersion=$FINAL_VERSION
+          mvn versions:commit
 
-#       - name: Build & Test
-#         run: mvn clean verify
+      - name: Build & Test
+        run: mvn clean verify
 
-#       - name: Deploy Release
-#         run: mvn deploy -DskipTests  --batch-mode
+      - name: Deploy Release
+        run: mvn deploy -DskipTests  --batch-mode
 
-#       - name: Commit RC Version
-#         run: |
-#           git config user.name "github-actions"
-#           git config user.email "github-actions@github.com"
-#           git commit -am "Remover sufixo RC e preparar versão final ${{ steps.cleanup-version.outputs.final_version }}"
-#           git push
+      - name: Commit RC Version
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git commit -am "Remover sufixo RC e preparar versão final ${{ steps.cleanup-version.outputs.final_version }}"
+          git push
 
-#       - name: Tag RC Version
-#         run: |
-#           git fetch --tags
-#           git tag "v${{ steps.cleanup-version.outputs.final_version }}"
-#           git push origin "v${{ steps.cleanup-version.outputs.final_version }}"
+      - name: Tag RC Version
+        run: |
+          git fetch --tags
+          git tag "v${{ steps.cleanup-version.outputs.final_version }}"
+          git push origin "v${{ steps.cleanup-version.outputs.final_version }}"
 
-#       - name: Criar GitHub Release
-#         uses: softprops/action-gh-release@v1
-#         with:
-#           tag_name: v${{ steps.cleanup-version.outputs.final_version }}
-#           name: Release v${{ steps.cleanup-version.outputs.final_version }}
-#           body: |
-#             📦 Nova versão publicada: v${{ steps.cleanup-version.outputs.final_version }}
-#         env:
-#           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Criar GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.cleanup-version.outputs.final_version }}
+          name: Release v${{ steps.cleanup-version.outputs.final_version }}
+          body: |
+            📦 Nova versão publicada: v${{ steps.cleanup-version.outputs.final_version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-#       - name: Atualizar develop para próxima versão
-#         run: |
-#           git fetch origin develop
-#           git checkout develop
+      - name: Atualizar develop para próxima versão
+        run: |
+          git fetch origin develop
+          git checkout develop
 
-#           # CURRENT_VERSION=${{ steps.current-version.outputs.version }}
-#           FINAL_VERSION=${{ steps.cleanup-version.outputs.final_version }}
+          # CURRENT_VERSION=${{ steps.current-version.outputs.version }}
+          FINAL_VERSION=${{ steps.cleanup-version.outputs.final_version }}
 
-#           MAJOR=$(echo "$FINAL_VERSION" | cut -d. -f1)
-#           MINOR=$(echo "$FINAL_VERSION" | cut -d. -f2)
-#           NEXT_MINOR=$((MINOR + 1))
-#           NEXT_VERSION="$MAJOR.$NEXT_MINOR.0-SNAPSHOT"
+          MAJOR=$(echo "$FINAL_VERSION" | cut -d. -f1)
+          MINOR=$(echo "$FINAL_VERSION" | cut -d. -f2)
+          NEXT_MINOR=$((MINOR + 1))
+          NEXT_VERSION="$MAJOR.$NEXT_MINOR.0-SNAPSHOT"
 
-#           echo "Atualizando develop para: $NEXT_VERSION"
+          echo "Atualizando develop para: $NEXT_VERSION"
 
-#           mvn versions:set -DnewVersion=$NEXT_VERSION
-#           mvn versions:commit
+          mvn versions:set -DnewVersion=$NEXT_VERSION
+          mvn versions:commit
 
-#           git config user.name "github-actions"
-#           git config user.email "github-actions@github.com"
-#           git commit -am "chore: iniciar nova versão $NEXT_VERSION na develop"
-#           git push origin develop
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git commit -am "chore: iniciar nova versão $NEXT_VERSION na develop"
+          git push origin develop
 
 
