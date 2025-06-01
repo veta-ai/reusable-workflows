@@ -15,7 +15,7 @@ on:
         default: 'develop'
 
 jobs:
-  build-and-pr:
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Project
@@ -39,7 +39,7 @@ jobs:
         run: mvn clean verify
 
   open-pr:
-    needs: build
+    needs: build-and-test
     runs-on: ubuntu-latest
     permissions:
       contents: read
