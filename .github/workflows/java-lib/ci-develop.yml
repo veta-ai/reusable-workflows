@@ -1,0 +1,46 @@
+name: CI - Develop Branch (Snapshot) - Lib
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  deploy-snapshot:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Configure Maven settings.xml
+        uses: s4u/maven-settings-action@v3.1.0
+        with:
+          servers: |
+            [{ 
+              "id": "nexus-snapshots",
+              "username": "${{ secrets.NEXUS_USERNAME }}",
+              "password": "${{ secrets.NEXUS_PASSWORD }}"
+            }]
+
+      - name: Build & Test
+        run: mvn clean verify
+
+      - name: Check for SNAPSHOT version
+        run: grep -q SNAPSHOT pom.xml || (echo "Versão não é SNAPSHOT. Abortando." && exit 1)
+
+      - name: Deploy snapshot version
+        run: mvn clean -DskipTests deploy --settings ~/.m2/settings.xml

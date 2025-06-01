@@ -1,0 +1,77 @@
+name: CI - Feature → Validação + PR automático
+
+on:
+  workflow_call:
+    inputs:
+    
+      java-version:
+        required: false
+        type: string
+        default: '21'
+
+      base-branch:
+        required: false
+        type: string
+        default: 'develop'
+
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+jobs:
+  build-and-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build & Test
+        run: mvn clean verify
+
+  open-pr:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    if: success()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Pull Request via API
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO_OWNER: ${{ github.repository_owner }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
+          BASE_BRANCH: develop
+          PR_TITLE: '[Auto] PR da feature para develop'
+          PR_BODY: 'Pull request automático gerado após a feature passar pelo CI com sucesso.'
+        run: |
+          echo "Tentando criar PR de: $HEAD_BRANCH para $BASE_BRANCH"
+          curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls" \
+            -d "{
+              \"head\": \"$HEAD_BRANCH\",
+              \"base\": \"$BASE_BRANCH\",
+              \"title\": \"$PR_TITLE\",
+              \"body\": \"$PR_BODY\"
+            }"
