@@ -1,14 +1,12 @@
-name: CI - Release → RC com Versão, Tag e Build
+name: CI - Release Candidate (Java Library)
 
 on:
   workflow_call:
     inputs:
-    
       java-version:
         required: false
         type: string
         default: '21'
-    
     secrets:
       NEXUS_USERNAME:
         required: true
@@ -16,7 +14,8 @@ on:
         required: true
 
 jobs:
-  validate-and-version-rc:
+  build:
+    name: Build & Test
     runs-on: ubuntu-latest
 
     steps:
@@ -40,11 +39,39 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
+      - name: Run Tests
+        run: mvn clean verify
+
+  prepare-rc:
+    name: Prepare RC Version & Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      rc_version: ${{ steps.rc.outputs.next_rc_version }}
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       - name: Configure Maven settings.xml
         uses: s4u/maven-settings-action@v3.1.0
         with:
           servers: |
-            [{ 
+            [{
               "id": "nexus-releases",
               "username": "${{ secrets.NEXUS_USERNAME }}",
               "password": "${{ secrets.NEXUS_PASSWORD }}"
@@ -80,20 +107,31 @@ jobs:
           mvn versions:set -DnewVersion=${{ steps.rc.outputs.next_rc_version }}
           mvn versions:commit
 
-      - name: Build & Test
-        run: mvn clean verify
+      - name: Deploy RC Version
+        run: mvn deploy -DskipTests --batch-mode
 
-      - name: Deploy Release Candicate
-        run: mvn deploy -DskipTests  --batch-mode
+
+  tag-rc:
+    name: Commit & Tag RC
+    needs: prepare-rc
+    runs-on: ubuntu-latest
+    env:
+      RC_VERSION: ${{ needs.prepare-rc.outputs.rc_version }}
+
+    steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Commit RC Version
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git commit -am "chore(release): set RC version ${{ steps.rc.outputs.next_rc_version }}"
-          git push origin
+          git commit -am "chore(release): set RC version $RC_VERSION"
+          git push
 
       - name: Tag RC Version
         run: |
-          git tag ${{ steps.rc.outputs.next_rc_version }}
-          git push origin ${{ steps.rc.outputs.next_rc_version }}
+          git tag "$RC_VERSION"
+          git push origin "$RC_VERSION"
