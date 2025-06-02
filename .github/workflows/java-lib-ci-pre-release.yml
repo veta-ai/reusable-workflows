@@ -30,6 +30,9 @@ jobs:
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: ${{ github.head_ref }}
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -88,9 +91,16 @@ jobs:
       - name: Deploy RC Version
         run: mvn deploy -DskipTests --batch-mode
 
+      - name: Commit RC Version
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git commit -am "chore(release): set RC version $RC_VERSION"
+          git push
+
 
   tag-rc:
-    name: Commit & Tag RC
+    name: Generate new Tag RC
     needs: prepare-rc
     runs-on: ubuntu-latest
     env:
@@ -102,13 +112,6 @@ jobs:
         with:
           persist-credentials: true
           ref: ${{ github.head_ref }}
-
-      - name: Commit RC Version
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git commit -am "chore(release): set RC version $RC_VERSION"
-          git push
 
       - name: Tag RC Version
         run: |

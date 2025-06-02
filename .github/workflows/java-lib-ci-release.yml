@@ -89,7 +89,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FINAL_VERSION: ${{ needs.prepare-release.outputs.final_version }}
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - name: Checkout Project
