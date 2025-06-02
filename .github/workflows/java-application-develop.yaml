@@ -31,11 +31,12 @@ jobs:
     name: Deploy Artifact to Nexus
     uses: ./.github/workflows/deploy-java-maven.yml
     needs: [build]
+    secrets: inherit
     with:
       java-version: ${{ inputs.java-version }}
 
   create-docker-image:
-    runs-on: ubuntu-latest
+    name: Create Docker Image
     needs: [deploy-artifact]
     uses: ./.github/workflows/create-docker-image.yml
     with:

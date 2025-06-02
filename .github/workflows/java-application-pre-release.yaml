@@ -22,84 +22,27 @@ jobs:
     with:
       java-version: ${{ inputs.java-version }}
 
-  validate-and-version-rc:
-    runs-on: ubuntu-latest
+  deploy-artifact:
+    name: Validate and Version RC
+    needs: build
+    uses: ./.github/workflows/deploy-java-maven-release-candidate.yml
+    secrets: inherit
+    outputs:
+      rc_version: ${{ steps.rc.outputs.next_rc_version }}
+    with:
+      java-version: ${{ inputs.java-version }}
 
-    steps:
-      - name: Checkout Project
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          ref: ${{ github.head_ref }}
+  create-docker-image:
+    name: Create Docker Image
+    needs: [deploy-artifact]
+    uses: ./.github/workflows/create-docker-image.yml
+    with:
+      java-version: ${{ inputs.java-version }}
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ inputs.java-version }}
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Configure Maven settings.xml
-        uses: s4u/maven-settings-action@v3.1.0
-        with:
-          servers: |
-            [{ 
-              "id": "nexus-releases",
-              "username": "${{ secrets.NEXUS_USERNAME }}",
-              "password": "${{ secrets.NEXUS_PASSWORD }}"
-            }]
-
-      - name: Extract Base Version
-        id: version
-        run: |
-          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          BASE_VERSION=$(echo $CURRENT_VERSION | sed 's/-.*//')
-          echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Calculate Next RC Version
-        id: rc
-        run: |
-          git fetch --tags
-          BASE=${{ steps.version.outputs.base_version }}
-          TAGS=$(git tag -l "${BASE}-RC*" || true)
-          echo "Existing RC tags:"
-          echo "$TAGS"
-
-          RC_NUMBER=1
-          if [[ ! -z "$TAGS" ]]; then
-            LAST_RC=$(echo "$TAGS" | sed -E 's/.*-RC([0-9]+)/\1/' | sort -nr | head -n1)
-            RC_NUMBER=$((LAST_RC + 1))
-          fi
-
-          NEW_VERSION="${BASE}-RC${RC_NUMBER}"
-          echo "next_rc_version=$NEW_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Set RC Version
-        run: |
-          mvn versions:set -DnewVersion=${{ steps.rc.outputs.next_rc_version }}
-          mvn versions:commit
-
-      - name: Build & Test
-        run: mvn clean verify
-
-      - name: Deploy Release Candicate
-        run: mvn deploy -DskipTests --batch-mode
-
-      - name: Commit RC Version
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git commit -am "chore(release): set RC version ${{ steps.rc.outputs.next_rc_version }}"
-          git push origin
-
-      - name: Tag RC Version
-        run: |
-          git tag ${{ steps.rc.outputs.next_rc_version }}
-          git push origin ${{ steps.rc.outputs.next_rc_version }}
+  apply-terraform:
+    uses: ./.github/workflows/apply-terraform-infra.yml
+    needs: [create-docker-image]
+    with:
+      terraform_version: '1.9.6'
+      base_version: ${{ steps.create-docker-image.outputs.base_version }}
+      deploy_infra: true

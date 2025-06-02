@@ -26,188 +26,23 @@ jobs:
     with:
       java-version: ${{ inputs.java-version }}
 
-  build_:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: true
-          ref: ${{ github.head_ref }}
-
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ inputs.java-version }}
-          distribution: 'temurin'
-
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Configure Maven settings.xml
-        uses: s4u/maven-settings-action@v3.1.0
-        with:
-          servers: |
-            [{ 
-              "id": "nexus-releases",
-              "username": "${{ secrets.NEXUS_USERNAME }}",
-              "password": "${{ secrets.NEXUS_PASSWORD }}"
-            }]
-
-      - name: Build & Test
-        run: mvn clean verify
-
-      - name: Detectar versão atual do pom.xml
-        id: current-version
-        run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "Versão atual: $VERSION"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Remover sufixo RC e atualizar pom.xml
-        if: contains(steps.current-version.outputs.version, '-RC')
-        id: cleanup-version
-        run: |
-          FINAL_VERSION=$(echo "${{ steps.current-version.outputs.version }}" | sed 's/-RC[0-9]*//')
-          echo "Versão final: $FINAL_VERSION"
-          echo "final_version=$FINAL_VERSION" >> $GITHUB_OUTPUT
-          mvn versions:set -DnewVersion=$FINAL_VERSION
-          mvn versions:commit
-
-      - name: Deploy Release
-        run: mvn deploy -DskipTests --batch-mode
-
-      - name: Commit RC Version
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git commit -am "Remover sufixo RC e preparar versão final ${{ steps.cleanup-version.outputs.final_version }}"
-          git push
-
-      - name: Tag RC Version
-        run: |
-          git fetch --tags
-          git tag "v${{ steps.cleanup-version.outputs.final_version }}"
-          git push origin "v${{ steps.cleanup-version.outputs.final_version }}"
-
-      - name: Criar GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.cleanup-version.outputs.final_version }}
-          name: Release v${{ steps.cleanup-version.outputs.final_version }}
-          body: |
-            📦 Nova versão publicada: v${{ steps.cleanup-version.outputs.final_version }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Atualizar develop para próxima versão
-        run: |
-          git fetch origin develop
-          git checkout develop
-
-          # CURRENT_VERSION=${{ steps.current-version.outputs.version }}
-          FINAL_VERSION=${{ steps.cleanup-version.outputs.final_version }}
-
-          MAJOR=$(echo "$FINAL_VERSION" | cut -d. -f1)
-          MINOR=$(echo "$FINAL_VERSION" | cut -d. -f2)
-          NEXT_MINOR=$((MINOR + 1))
-          NEXT_VERSION="$MAJOR.$NEXT_MINOR.0-SNAPSHOT"
-
-          echo "Atualizando develop para: $NEXT_VERSION"
-
-          mvn versions:set -DnewVersion=$NEXT_VERSION
-          mvn versions:commit
-
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git commit -am "chore: iniciar nova versão $NEXT_VERSION na develop"
-          git push origin develop
+  prepare-release:
+    name: Prepare & Deploy Final Version
+    needs: build
+    uses: ./.github/workflows/deploy-java-maven-release.yml
+    with:
+      java-version: ${{ inputs.java-version }}
 
   create-docker-image:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    uses: ./.github/workflows/create-docker-image.yaml
+    needs: [build]
+    with:
+      java-version: ${{ inputs.java-version }}
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: ${{ inputs.java-version }}
-          cache: maven
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ inputs.aws-region }}
-
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build, tag, and push Docker image to ECR
-        env:
-          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
-          ECR_REPOSITORY: ${{ github.repository }}-ecr
-          IMAGE_TAG: $FINAL_VERSION
-        run: |
-
-          ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com
-
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-
-  detect-terraform-infra:
-    runs-on: ubuntu-latest
-    outputs:
-      has-terraform: ${{ steps.check.outputs.has_tf }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - id: check
-        run: |
-          if compgen -G "infra/*.tf" > /dev/null; then
-            echo "has_tf=true" >> $GITHUB_OUTPUT
-          else
-            echo "has_tf=false" >> $GITHUB_OUTPUT
-          fi
-  
-  apply-terraform-infra:
-    runs-on: ubuntu-latest
-    needs: [build, detect-terraform-infra]
-    if: needs.detect-terraform-infra.outputs.has-terraform == 'true'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ inputs.aws-region }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: "1.9.6"
-
-      - name: Initialize terraform
-        run: cd infra && terraform init
-
-      - name: Validate terraform
-        run: cd infra && terraform validate
-
-      - name: Plan terraform
-        run: cd infra && terraform plan -var-file="terraform.tfvars" -var="image_tag=${{ steps.version.outputs.base_version }}" -out=tfplan
-
-      - name: Apply terraform
-        run: cd infra && terraform apply -auto-approve -var="image_tag=${{ steps.version.outputs.base_version }}"
+  apply-terraform:
+    uses: ./.github/workflows/apply-terraform-infra.yml
+    needs: [create-docker-image]
+    with:
+      terraform_version: '1.9.6'
+      base_version: ${{ steps.create-docker-image.outputs.base_version }}
+      deploy_infra: true

@@ -33,3 +33,10 @@ jobs:
     with:
       terraform_version: '1.9.6'
       deploy_infra: false
+
+  open-pr:
+    needs: build
+    runs-on: ubuntu-latest
+    uses: ./.github/workflows/open-pr.yml
+    with:
+      base-branch: 'develop'
