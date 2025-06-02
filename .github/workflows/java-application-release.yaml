@@ -21,6 +21,12 @@ on:
 
 jobs:
   build:
+    name: Build & Test
+    uses: ./.github/workflows/build-java-maven.yml
+    with:
+      java-version: ${{ inputs.java-version }}
+
+  build_:
     runs-on: ubuntu-latest
 
     steps:
@@ -130,7 +136,7 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'corretto'
+          distribution: 'temurin'
           java-version: ${{ inputs.java-version }}
           cache: maven
 
