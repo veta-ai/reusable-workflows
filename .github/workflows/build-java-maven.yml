@@ -1,0 +1,35 @@
+name: Build & Test Java Project (Maven)
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        required: false
+        type: string
+        default: '21'
+
+jobs:
+  build:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java ${{ inputs.java-version }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build & Test with Maven
+        run: mvn clean verify

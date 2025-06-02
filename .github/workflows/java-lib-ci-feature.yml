@@ -10,27 +10,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Project
-        uses: actions/checkout@v4
-
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ inputs.java-version }}
-          distribution: 'temurin'
-          cache: maven
-
-      - name: Cache Maven packages
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-m2
-
-      - name: Build & Test
-        run: mvn clean verify
+    name: Build & Test
+    uses: ./.github/workflows/build-java-maven.yml
+    with:
+      java-version: ${{ inputs.java-version }}
 
   open-pr:
     needs: build
