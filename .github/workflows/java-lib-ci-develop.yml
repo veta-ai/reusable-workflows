@@ -54,4 +54,4 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Deploy Snapshot
-        run: mvn clean deploy -P snapshot -DskipTests
+        run: mvn deploy -DskipTests --batch-mode

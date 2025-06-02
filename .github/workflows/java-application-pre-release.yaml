@@ -84,7 +84,7 @@ jobs:
         run: mvn clean verify
 
       - name: Deploy Release Candicate
-        run: mvn deploy -DskipTests  --batch-mode
+        run: mvn deploy -DskipTests --batch-mode
 
       - name: Commit RC Version
         run: |
