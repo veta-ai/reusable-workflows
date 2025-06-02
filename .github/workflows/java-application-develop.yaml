@@ -1,4 +1,4 @@
-name: Build docker image e deploy
+name: CI - Snapshot Deploy (Java Application)
 
 on:
   workflow_call:
@@ -13,6 +13,11 @@ on:
         required: false
         type: string
         default: 'us-east-1'
+
+      terraform-version:
+        required: false
+        type: string
+        default: '1.9.6'
     
     secrets:
       AWS_ACCESS_KEY_ID:
@@ -29,7 +34,7 @@ jobs:
   
   deploy-artifact:
     name: Deploy Artifact to Nexus
-    uses: ./.github/workflows/deploy-java-maven.yml
+    uses: ./.github/workflows/deploy-java-maven-snapshot.yml
     needs: [build]
     secrets: inherit
     with:
@@ -38,6 +43,7 @@ jobs:
   create-docker-image:
     name: Create Docker Image
     needs: [deploy-artifact]
+    secrets: inherit
     uses: ./.github/workflows/create-docker-image.yml
     with:
       java-version: ${{ inputs.java-version }}
@@ -45,7 +51,8 @@ jobs:
   apply-terraform:
     uses: ./.github/workflows/apply-terraform-infra.yml
     needs: [create-docker-image]
+    secrets: inherit
     with:
-      terraform_version: '1.9.6'
+      terraform_version: ${{ inputs.terraform-version }}
       base_version: ${{ steps.create-docker-image.outputs.base_version }}
       deploy_infra: true

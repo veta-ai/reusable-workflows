@@ -13,8 +13,6 @@ jobs:
     name: Prepare RC Version & Deploy
     needs: build
     runs-on: ubuntu-latest
-    outputs:
-      rc_version: ${{ steps.rc.outputs.next_rc_version }}
 
     steps:
       - name: Checkout Project
@@ -74,7 +72,7 @@ jobs:
 
       - name: Set RC Version
         run: |
-          mvn versions:set -DnewVersion=${{ steps.rc.outputs.next_rc_version }}
+          mvn versions:set -DnewVersion=$NEW_VERSION
           mvn versions:commit
 
       - name: Deploy RC Version
@@ -93,7 +91,7 @@ jobs:
     needs: prepare-rc
     runs-on: ubuntu-latest
     env:
-      RC_VERSION: ${{ needs.prepare-rc.outputs.rc_version }}
+      RC_VERSION: $NEW_VERSION
 
     steps:
       - name: Checkout Project

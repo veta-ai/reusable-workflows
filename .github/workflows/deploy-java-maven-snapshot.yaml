@@ -1,4 +1,4 @@
-name: Build & Test Java Project (Maven)
+name: Deploy Java Release Candidate to Nexus
 
 on:
   workflow_call:
@@ -7,6 +7,11 @@ on:
         required: false
         type: string
         default: '21'
+    secrets:
+      NEXUS_USERNAME:
+        required: true
+      NEXUS_PASSWORD:
+        required: true
 
 jobs:
   deploy-java-maven-snapshot:
@@ -41,6 +46,12 @@ jobs:
               "username": "${{ secrets.NEXUS_USERNAME }}",
               "password": "${{ secrets.NEXUS_PASSWORD }}"
             }]
+
+      - name: Validate SNAPSHOT version
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Detected version: $VERSION"
+          [[ "$VERSION" == *-SNAPSHOT ]] || (echo "ERROR: Version is not a SNAPSHOT!" && exit 1)
 
       - name: Deploy to Nexus
         run: mvn deploy -DskipTests --batch-mode

@@ -10,7 +10,6 @@ on:
 
 jobs:
   open-pr:
-    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -23,8 +22,8 @@ jobs:
           REPO_NAME: ${{ github.event.repository.name }}
           HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
           BASE_BRANCH: ${{ inputs.base-branch }}
-          PR_TITLE: '[Auto] PR da feature para ${{ inputs.base-branch }}'
-          PR_BODY: 'Pull request automático gerado após a feature passar pelo CI com sucesso.'
+          PR_TITLE: '[Auto] PR from $HEAD_BRANCH to $BASE_BRANCH'
+          PR_BODY: 'Auto-generated pull request after successful CI on feature branch.'
         run: |
           echo "Tentando criar PR de: $HEAD_BRANCH para $BASE_BRANCH"
           curl -X POST \

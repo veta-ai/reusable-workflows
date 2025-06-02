@@ -1,4 +1,4 @@
-name: Build docker image e deploy
+name: Create and Push Docker Image to ECR
 
 on:
   workflow_call:

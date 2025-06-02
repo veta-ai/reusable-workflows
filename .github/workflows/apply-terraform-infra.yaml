@@ -1,27 +1,29 @@
-name: Build docker image e deploy
+name: Apply Terraform Infrastructure
 
 on:
   workflow_call:
     inputs:
       
       aws-region:
-        required: false
+        required: true
         type: string
-        default: 'us-east-1'
 
       terraform_version:
-        required: false
+        required: true
         type: string
-        default: '1.9.6'
 
       base_version:
         required: true
         type: string
-        default: '1.0.0'
 
       deploy_infra:
-        type: boolean
         default: false
+        type: boolean
+
+      environment:
+        required: true
+        type: string
+        default: "dev"
     
     secrets:
       AWS_ACCESS_KEY_ID:
@@ -73,12 +75,12 @@ jobs:
 
       - name: Plan terraform
         run: cd infra && terraform plan \
-          -var-file="dev.tfvars" \
+          -var-file="${{ inputs.environment }}.tfvars" \
           -var="image_tag=${{ inputs.base_version }}" \
           -out=tfplan
 
       - name: Apply terraform
         if: ${{ inputs.deploy_infra == 'true' }}
         run: cd infra && terraform apply -auto-approve \
-          -var-file="dev.tfvars" \
+          -var-file="${{ inputs.environment }}.tfvars" \
           -var="image_tag=${{ inputs.base_version }}" \

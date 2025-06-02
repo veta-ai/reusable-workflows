@@ -26,3 +26,4 @@ jobs:
     uses: ./.github/workflows/deploy-java-maven-release.yml
     with:
       java-version: ${{ inputs.java-version }}
+    secrets: inherit

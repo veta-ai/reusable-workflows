@@ -8,6 +8,11 @@ on:
         required: false
         type: string
         default: '21'
+
+      terraform-version:
+        required: false
+        type: string
+        default: '1.9.6'
     
     secrets:
       NEXUS_USERNAME:
@@ -26,7 +31,7 @@ jobs:
     with:
       java-version: ${{ inputs.java-version }}
 
-  prepare-release:
+  deploy-artifact:
     name: Prepare & Deploy Final Version
     needs: build
     uses: ./.github/workflows/deploy-java-maven-release.yml
@@ -34,15 +39,18 @@ jobs:
       java-version: ${{ inputs.java-version }}
 
   create-docker-image:
-    uses: ./.github/workflows/create-docker-image.yaml
-    needs: [build]
+    name: Create Docker Image
+    needs: [deploy-artifact]
+    secrets: inherit
+    uses: ./.github/workflows/create-docker-image.yml
     with:
       java-version: ${{ inputs.java-version }}
 
   apply-terraform:
     uses: ./.github/workflows/apply-terraform-infra.yml
     needs: [create-docker-image]
+    secrets: inherit
     with:
-      terraform_version: '1.9.6'
+      terraform_version: ${{ inputs.terraform-version }}
       base_version: ${{ steps.create-docker-image.outputs.base_version }}
       deploy_infra: true

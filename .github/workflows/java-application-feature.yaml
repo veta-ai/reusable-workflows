@@ -1,4 +1,4 @@
-name: Build mavem project and execute test
+name: CI - Feature Validation (Java Application)
 
 on:
   workflow_call:
@@ -13,6 +13,17 @@ on:
         required: false
         type: string
         default: 'us-east-1'
+
+      terraform-version:
+        required: false
+        type: string
+        default: '1.9.6'
+
+      base-branch:
+        required: false
+        type: string
+        default: 'develop'
+    
     
     secrets:
       AWS_ACCESS_KEY_ID:
@@ -30,13 +41,15 @@ jobs:
   validate-terraform:
     uses: ./.github/workflows/apply-terraform-infra.yml
     needs: [build]
+    secrets: inherit
     with:
-      terraform_version: '1.9.6'
+      terraform_version: ${{ inputs.terraform-version }}
       deploy_infra: false
 
   open-pr:
     needs: build
     runs-on: ubuntu-latest
     uses: ./.github/workflows/open-pr.yml
+    secrets: inherit
     with:
-      base-branch: 'develop'
+      base-branch: '${{ inputs.base-branch }}'

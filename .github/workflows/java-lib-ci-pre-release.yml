@@ -25,7 +25,5 @@ jobs:
     needs: build
     uses: ./.github/workflows/deploy-java-maven-release-candidate.yml
     secrets: inherit    
-    outputs:
-      rc_version: ${{ steps.rc.outputs.next_rc_version }}
     with:
       java-version: ${{ inputs.java-version }}
