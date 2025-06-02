@@ -73,7 +73,7 @@ jobs:
           mvn versions:commit
 
       - name: Deploy Release
-        run: mvn deploy -DskipTests  --batch-mode
+        run: mvn deploy -DskipTests --batch-mode
 
       - name: Commit RC Version
         run: |
