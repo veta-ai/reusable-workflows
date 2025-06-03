@@ -8,10 +8,15 @@ on:
         required: false
         default: '21'
     outputs:
-      version: ${{ jobs.build.outputs.version }}
-      is_snapshot: ${{ jobs.build.outputs.is_snapshot }}
-      is_release_candidate: ${{ jobs.build.outputs.is_release_candidate }}
-      is_release: ${{ jobs.build.outputs.is_release }}
+      version:
+        value: ${{ jobs.build.outputs.version }}
+      is_snapshot:
+        value: ${{ jobs.build.outputs.is_snapshot }}
+      is_release_candidate:
+        value: ${{ jobs.build.outputs.is_release_candidate }}
+      is_release:
+        value: ${{ jobs.build.outputs.is_release }}
+
 
 jobs:
   build:
