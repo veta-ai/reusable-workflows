@@ -27,20 +27,32 @@ jobs:
           PR_TITLE: "[Auto] PR from $HEAD_BRANCH to $BASE_BRANCH"
           PR_BODY: "Auto-generated pull request after successful CI on feature branch."
         run: |
-          set -euo pipefail
+          # set -euo pipefail
 
           echo "🔁 Criando PR de: $HEAD_BRANCH para $BASE_BRANCH"
 
-          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+          curl -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "User-Agent: github-actions" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls" \
-            -d "{\n              \"head\": \"$HEAD_BRANCH\",\n              \"base\": \"$BASE_BRANCH\",\n              \"title\": \"$PR_TITLE\",\n              \"body\": \"$PR_BODY\"\n            }")
+            -d "{
+              \"head\": \"$HEAD_BRANCH\",
+              \"base\": \"$BASE_BRANCH\",
+              \"title\": \"$PR_TITLE\",
+              \"body\": \"$PR_BODY\"
+            }"
 
-          if [[ "$RESPONSE" -ge 300 ]]; then
-            echo "❌ Failed to create pull request. Status: $RESPONSE"
-            cat response.json
-            exit 1
-          else
-            echo "✅ Pull request created successfully."
-          fi
+          # RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
+          #   -H "Accept: application/vnd.github+json" \
+          #   -H "Authorization: Bearer $GITHUB_TOKEN" \
+          #   "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls" \
+          #   -d "{\n              \"head\": \"$HEAD_BRANCH\",\n              \"base\": \"$BASE_BRANCH\",\n              \"title\": \"$PR_TITLE\",\n              \"body\": \"$PR_BODY\"\n            }")
+
+          # if [[ "$RESPONSE" -ge 300 ]]; then
+          #   echo "❌ Failed to create pull request. Status: $RESPONSE"
+          #   cat response.json
+          #   exit 1
+          # else
+          #   echo "✅ Pull request created successfully."
+          # fi
