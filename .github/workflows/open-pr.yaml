@@ -1,4 +1,4 @@
-name: CI - Open Pull Request
+name: Auto Create Pull Request
 
 on:
   workflow_call:
@@ -13,7 +13,8 @@ permissions:
   pull-requests: write
 
 jobs:
-  open-pr:
+  create-auto-pr:
+    name: Create Auto PR via GitHub API
     runs-on: ubuntu-latest
     steps:
       - name: Create Pull Request via API
@@ -23,18 +24,24 @@ jobs:
           REPO_NAME: ${{ github.event.repository.name }}
           HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
           BASE_BRANCH: ${{ inputs.base-branch }}
-          PR_TITLE: '[Auto] PR from $HEAD_BRANCH to $BASE_BRANCH'
-          PR_BODY: 'Auto-generated pull request after successful CI on feature branch.'
+          PR_TITLE: "[Auto] PR from $HEAD_BRANCH to $BASE_BRANCH"
+          PR_BODY: "Auto-generated pull request after successful CI on feature branch."
         run: |
-          echo "Tentando criar PR de: $HEAD_BRANCH para $BASE_BRANCH"
-          curl -X POST \
+          set -euo pipefail
+
+          echo "🔁 Criando PR de: $HEAD_BRANCH para $BASE_BRANCH"
+
+          RESPONSE=$(curl -s -o response.json -w "%{http_code}" -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer $GITHUB_TOKEN" \
             -H "User-Agent: github-actions" \
             "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/pulls" \
-            -d "{
-              \"head\": \"$HEAD_BRANCH\",
-              \"base\": \"$BASE_BRANCH\",
-              \"title\": \"$PR_TITLE\",
-              \"body\": \"$PR_BODY\"
-            }"
+            -d "{\n              \"head\": \"$HEAD_BRANCH\",\n              \"base\": \"$BASE_BRANCH\",\n              \"title\": \"$PR_TITLE\",\n              \"body\": \"$PR_BODY\"\n            }")
+
+          if [[ "$RESPONSE" -ge 300 ]]; then
+            echo "❌ Failed to create pull request. Status: $RESPONSE"
+            cat response.json
+            exit 1
+          else
+            echo "✅ Pull request created successfully."
+          fi

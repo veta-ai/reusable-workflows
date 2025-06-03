@@ -19,7 +19,6 @@ on:
     secrets:
       NEXUS_USERNAME:
         required: true
-        
       NEXUS_PASSWORD:
         required: true
 
@@ -28,9 +27,8 @@ permissions:
   packages: write
 
 jobs:
-  deploy-java-maven-snapshot:
-    name: Deploy java snapshot to Nexus
-    needs: build
+  snapshot-deploy-to-nexus:
+    name: Snapshot - Deploy to Nexus
     runs-on: ubuntu-latest
 
     steps:
@@ -54,11 +52,15 @@ jobs:
               "password": "${{ secrets.NEXUS_PASSWORD }}"
             }]
 
-      - name: Validate SNAPSHOT version
+      - name: Validate Version is SNAPSHOT
         run: |
+          set -euo pipefail
           VERSION="${{ inputs.version }}"
-          echo "Detected version: ${{ inputs.version }}"
+          echo "Detected version: $VERSION"
           [[ "$VERSION" == *-SNAPSHOT ]] || (echo "ERROR: Version is not a SNAPSHOT!" && exit 1)
+
+      - name: Validate Build Before Deploy
+        run: mvn verify
 
       - name: Skipping deploy to Nexus
         if: ${{ inputs.dry-run == true }}

@@ -27,9 +27,8 @@ permissions:
   packages: write
 
 jobs:
-  prepare-release:
-    name: Prepare & Deploy Final Version
-    needs: build
+  release-finalize-and-deploy:
+    name: Finalize Version & Deploy to Nexus
     runs-on: ubuntu-latest
     outputs:
       final_version: ${{ steps.cleanup-version.outputs.final_version }}
@@ -39,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.ref_name }}
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -61,6 +60,7 @@ jobs:
       - name: Detect Current Version
         id: current-version
         run: |
+          set -euo pipefail
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -68,10 +68,14 @@ jobs:
         if: contains(steps.current-version.outputs.version, '-RC')
         id: cleanup-version
         run: |
+          set -euo pipefail
           FINAL_VERSION=$(echo "${{ steps.current-version.outputs.version }}" | sed 's/-RC[0-9]*//')
           echo "final_version=$FINAL_VERSION" >> $GITHUB_OUTPUT
           mvn versions:set -DnewVersion=$FINAL_VERSION
           mvn versions:commit
+
+      - name: Validate Build Again
+        run: mvn verify
 
       - name: Skipping deploy to Nexus
         if: ${{ inputs.dry-run == true }}
@@ -88,30 +92,31 @@ jobs:
           git commit -am "chore(release): finalize version ${{ steps.cleanup-version.outputs.final_version }}"
           git push
 
-  create-tag:
-    name: Tag, GitHub Release & Bump Develop
-    needs: prepare-release
+  release-create-tag:
+    name: Release - Create Git Tag
+    needs: release-finalize-and-deploy
     runs-on: ubuntu-latest
     env:
-      FINAL_VERSION: ${{ needs.prepare-release.outputs.final_version }}
+      FINAL_VERSION: ${{ needs.release-finalize-and-deploy.outputs.final_version }}
 
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
         with:
           persist-credentials: true
-          ref: ${{ github.head_ref }}
+          ref: ${{ github.ref_name }}
 
       - name: Create Git Tag
         run: |
+          set -euo pipefail
           git tag "v$FINAL_VERSION"
           git push origin "v$FINAL_VERSION"
 
-  create-git-release:
-    name: Create GitHub Release
-    needs: create-tag
+  release-create-gh-release:
+    name: Release - GitHub Release
+    needs: release-create-tag
     env:
-      FINAL_VERSION: ${{ needs.prepare-release.outputs.final_version }}
+      FINAL_VERSION: ${{ needs.release-finalize-and-deploy.outputs.final_version }}
 
     steps:
       - name: Checkout Project
@@ -130,9 +135,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  bump-develop:
-    name: Bump Develop Branch to Next Snapshot
-    needs: create-git-release
+  release-bump-develop:
+    name: Release - Bump Develop Branch to Next Snapshot
+    needs: release-create-gh-release
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Develop Branch
@@ -143,11 +149,13 @@ jobs:
 
       - name: Bump develop to next snapshot
         run: |
+          set -euo pipefail
           git fetch origin develop
           git checkout develop
 
-          MAJOR=$(echo "$FINAL_VERSION" | cut -d. -f1)
-          MINOR=$(echo "$FINAL_VERSION" | cut -d. -f2)
+          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
+          MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
           NEXT_MINOR=$((MINOR + 1))
           NEXT_VERSION="$MAJOR.$NEXT_MINOR.0-SNAPSHOT"
 

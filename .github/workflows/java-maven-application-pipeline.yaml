@@ -21,6 +21,9 @@ on:
       environment:
         type: string
         required: true
+      dry-run:
+        type: boolean
+        required: true
 
     secrets:
       NEXUS_USERNAME:
@@ -37,53 +40,76 @@ permissions:
   packages: write
 
 jobs:
-
-  build:
-    name: Build & Extract Version
+  build-version:
+    name: Build and Extract Version
     uses: ./.github/workflows/build-and-extract-version.yml
     with:
       java-version: ${{ inputs.java-version }}
 
   deploy-artifact-snapshot:
-    if: ${{ needs.build.outputs.is_snapshot == 'true' }}
-    needs: build
+    name: Deploy Snapshot to Nexus
+    if: ${{ inputs.deploy-artifact && needs.build-version.outputs.is_snapshot == 'true' }}
+    needs: build-version
     uses: ./.github/workflows/deploy-java-maven-snapshot.yml
     with:
       java-version: ${{ inputs.java-version }}
-      dry-run: false
+      dry-run: ${{ inputs.dry-run }}
+      version: ${{ needs.build-version.outputs.version }}
     secrets: inherit
 
   deploy-artifact-release-candidate:
-    if: ${{ needs.build.outputs.is_release_candidate == 'true' }}
-    needs: build
+    name: Deploy RC to Nexus
+    if: ${{ inputs.deploy-artifact && needs.build-version.outputs.is_release_candidate == 'true' }}
+    needs: build-version
     uses: ./.github/workflows/deploy-java-maven-release-candidate.yml
     with:
       java-version: ${{ inputs.java-version }}
-      dry-run: false
+      dry-run: ${{ inputs.dry-run }}
+      version: ${{ needs.build-version.outputs.version }}
     secrets: inherit
 
   deploy-artifact-release:
-    if: ${{ needs.build.outputs.is_release == 'true' }}
-    needs: build
+    name: Deploy Final Release to Nexus
+    if: ${{ inputs.deploy-artifact && needs.build-version.outputs.is_release == 'true' }}
+    needs: build-version
     uses: ./.github/workflows/deploy-java-maven-release.yml
     with:
       java-version: ${{ inputs.java-version }}
-      dry-run: true
+      dry-run: ${{ inputs.dry-run }}
+      version: ${{ needs.build-version.outputs.version }}
     secrets: inherit
 
-    create-docker-image:
-      name: Create Docker Image
-      needs: [build, deploy-artifact-snapshot, deploy-artifact-release-candidate, deploy-artifact-release]
-      secrets: inherit
-      uses: ./.github/workflows/create-docker-image.yml
-      with:
-        java-version: ${{ inputs.java-version }}
+  docker-build-and-push:
+    name: Build & Push Docker Image
+    if: ${{ inputs.build-docker }}
+    needs: 
+      - build-version
+      - deploy-artifact-snapshot
+      - deploy-artifact-release-candidate
+      - deploy-artifact-release
+    uses: ./.github/workflows/create-docker-image.yml
+    with:
+      java-version: ${{ inputs.java-version }}
+    secrets: inherit
 
-  apply-terraform:
+  terraform-apply-infra:
+    name: Apply Terraform Infrastructure
+    if: ${{ inputs.apply-infra }}
+    needs: docker-build-and-push
     uses: ./.github/workflows/apply-terraform-infra.yml
-    needs: [create-docker-image]
-    secrets: inherit
     with:
       terraform_version: ${{ inputs.terraform-version }}
-      base_version: ${{ needs.deploy-artifact.outputs.final_version }}
+      base_version: ${{ needs.build-version.outputs.version }}
       deploy_infra: true
+      environment: ${{ inputs.environment }}
+    secrets: inherit
+
+  library-open-snapshot-pr:
+    name: Open PR for Snapshot Integration
+    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' }}
+    needs: [build-version, deploy-artifact-snapshot]
+    runs-on: ubuntu-latest
+    uses: ./.github/workflows/open-pr.yml
+    with:
+      base-branch: ${{ inputs.base-branch }}
+    secrets: inherit
