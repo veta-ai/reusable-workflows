@@ -7,10 +7,20 @@ on:
         required: false
         type: string
         default: '21'
+      
+      base-branch:
+        required: false
+        type: string
+        default: 'develop'
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   build:
     name: Build & Test
+    if: startsWith(github.ref, 'refs/heads/feature/')
     uses: ./.github/workflows/build-java-maven.yml
     with:
       java-version: ${{ inputs.java-version }}
@@ -20,5 +30,5 @@ jobs:
     runs-on: ubuntu-latest
     uses: ./.github/workflows/open-pr.yml
     with:
-      base-branch: 'develop'
+      base-branch: ${{ inputs.base-branch }}
     secrets: inherit

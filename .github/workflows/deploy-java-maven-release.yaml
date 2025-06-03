@@ -7,11 +7,16 @@ on:
         required: false
         type: string
         default: '21'
+
     secrets:
       NEXUS_USERNAME:
         required: true
       NEXUS_PASSWORD:
         required: true
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   prepare-release:
@@ -74,7 +79,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git commit -am "chore(release): finalize version $FINAL_VERSION"
+          git commit -am "chore(release): finalize version ${{ steps.cleanup-version.outputs.final_version }}"
           git push
 
   create-tag:
@@ -99,6 +104,9 @@ jobs:
   create-git-release:
     name: Create GitHub Release
     needs: create-tag
+    env:
+      FINAL_VERSION: ${{ needs.prepare-release.outputs.final_version }}
+
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
@@ -109,12 +117,23 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v${{ env.FINAL_VERSION }}
-          name: Release v${{ env.FINAL_VERSION }}
+          tag_name: v$FINAL_VERSION
+          name: Release v$FINAL_VERSION
           body: |
-            📦 Final version released: v${{ env.FINAL_VERSION }}
+            📦 Final version released: v$FINAL_VERSION
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  bump-develop:
+    name: Bump Develop Branch to Next Snapshot
+    needs: create-git-release
+
+    steps:
+      - name: Checkout Develop Branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+          ref: develop
 
       - name: Bump develop to next snapshot
         run: |

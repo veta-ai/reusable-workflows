@@ -31,6 +31,10 @@ on:
       AWS_SECRET_ACCESS_KEY:
         required: false
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   build:
     name: Build & Test
@@ -45,6 +49,7 @@ jobs:
     with:
       terraform_version: ${{ inputs.terraform-version }}
       deploy_infra: false
+      environment: 'dev'
 
   open-pr:
     needs: build

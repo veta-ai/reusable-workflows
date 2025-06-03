@@ -20,6 +20,10 @@ on:
       NEXUS_PASSWORD:
         required: true
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     name: Build & Test
@@ -49,5 +53,5 @@ jobs:
     secrets: inherit
     with:
       terraform_version: ${{ inputs.terraform-version }}
-      base_version: ${{ steps.create-docker-image.outputs.base_version }}
+      base_version: ${{ needs.deploy-artifact.outputs.next_rc_version }}
       deploy_infra: true

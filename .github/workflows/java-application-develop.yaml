@@ -25,6 +25,10 @@ on:
       AWS_SECRET_ACCESS_KEY:
         required: false
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     name: Build & Test
@@ -54,5 +58,5 @@ jobs:
     secrets: inherit
     with:
       terraform_version: ${{ inputs.terraform-version }}
-      base_version: ${{ steps.create-docker-image.outputs.base_version }}
+      base_version: ${{ needs.deploy-artifact.outputs.version }}
       deploy_infra: true

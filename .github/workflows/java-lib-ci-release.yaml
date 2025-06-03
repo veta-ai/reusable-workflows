@@ -13,6 +13,10 @@ on:
       NEXUS_PASSWORD:
         required: true
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     name: Build & Test

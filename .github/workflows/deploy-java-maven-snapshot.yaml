@@ -1,4 +1,4 @@
-name: Deploy Java Release Candidate to Nexus
+name: Deploy Java Snapshot to Nexus
 
 on:
   workflow_call:
@@ -7,17 +7,30 @@ on:
         required: false
         type: string
         default: '21'
+
+      dry-run:
+        required: false
+        type: boolean
+        default: false 
+
     secrets:
       NEXUS_USERNAME:
         required: true
+        
       NEXUS_PASSWORD:
         required: true
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   deploy-java-maven-snapshot:
     name: Deploy java snapshot to Nexus
     needs: build
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
 
     steps:
       - name: Checkout Project
@@ -48,10 +61,17 @@ jobs:
             }]
 
       - name: Validate SNAPSHOT version
+        id: extract_version
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "Detected version: $VERSION"
           [[ "$VERSION" == *-SNAPSHOT ]] || (echo "ERROR: Version is not a SNAPSHOT!" && exit 1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Skipping deploy to Nexus
+        if: ${{ inputs.dry-run == true }}
+        run: echo "🟡 Dry-run mode ON — skipping actual deploy to Nexus."
 
       - name: Deploy to Nexus
+        if: ${{ inputs.dry-run != true }}
         run: mvn deploy -DskipTests --batch-mode

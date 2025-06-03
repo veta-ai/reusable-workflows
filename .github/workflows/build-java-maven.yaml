@@ -8,6 +8,10 @@ on:
         type: string
         default: '21'
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     name: Build & Test

@@ -3,16 +3,11 @@ name: Apply Terraform Infrastructure
 on:
   workflow_call:
     inputs:
-      
       aws-region:
         required: true
         type: string
 
       terraform_version:
-        required: true
-        type: string
-
-      base_version:
         required: true
         type: string
 
@@ -23,13 +18,16 @@ on:
       environment:
         required: true
         type: string
-        default: "dev"
     
     secrets:
       AWS_ACCESS_KEY_ID:
         required: false
+
       AWS_SECRET_ACCESS_KEY:
         required: false
+
+permissions:
+  contents: read
 
 jobs:
   detect-terraform-infra:
@@ -76,11 +74,11 @@ jobs:
       - name: Plan terraform
         run: cd infra && terraform plan \
           -var-file="${{ inputs.environment }}.tfvars" \
-          -var="image_tag=${{ inputs.base_version }}" \
+          -var="image_tag=${{ inputs.environment }}" \
           -out=tfplan
 
       - name: Apply terraform
         if: ${{ inputs.deploy_infra == 'true' }}
         run: cd infra && terraform apply -auto-approve \
           -var-file="${{ inputs.environment }}.tfvars" \
-          -var="image_tag=${{ inputs.base_version }}" \
+          -var="image_tag=${{ inputs.environment }}"

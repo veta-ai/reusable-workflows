@@ -13,9 +13,14 @@ on:
       NEXUS_PASSWORD:
         required: true
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build:
     name: Build & Test
+    if: startsWith(github.ref, 'refs/heads/release/')
     uses: ./.github/workflows/build-java-maven.yml
     with:
       java-version: ${{ inputs.java-version }}
