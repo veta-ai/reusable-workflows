@@ -6,17 +6,14 @@ on:
       java-version:
         type: string
         default: '21'
-      
       base-branch:
         required: false
         type: string
         default: 'develop'
-
       dry-run:
         type: boolean
         required: false
         default: false
-
     secrets:
       NEXUS_USERNAME:
         required: false
@@ -70,8 +67,9 @@ jobs:
   library-open-snapshot-pr:
     name: Open PR for Snapshot Integration
     if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' }}
-    needs: [library-build-and-version, library-deploy-snapshot]
-    runs-on: ubuntu-latest
+    needs:
+      - library-build-and-version
+      - library-deploy-snapshot
     uses: ./.github/workflows/open-pr.yml
     with:
       base-branch: ${{ inputs.base-branch }}

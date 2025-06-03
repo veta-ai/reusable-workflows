@@ -7,15 +7,12 @@ on:
         required: false
         type: string
         default: '21'
-
       dry-run:
         required: true
         type: boolean
-
       version:
         required: true
         type: string
-
     secrets:
       NEXUS_USERNAME:
         required: true
@@ -31,7 +28,7 @@ jobs:
     name: Finalize Version & Deploy to Nexus
     runs-on: ubuntu-latest
     outputs:
-      final_version: ${{ steps.cleanup-version.outputs.final_version }}
+      final_version: ${{ steps.cleanup-version.outputs.final_version || inputs.version }}
 
     steps:
       - name: Checkout Project
@@ -65,14 +62,18 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Finalize Version (remove RC)
-        if: contains(steps.current-version.outputs.version, '-RC')
         id: cleanup-version
         run: |
           set -euo pipefail
-          FINAL_VERSION=$(echo "${{ steps.current-version.outputs.version }}" | sed 's/-RC[0-9]*//')
+          VERSION="${{ steps.current-version.outputs.version }}"
+          if [[ "$VERSION" == *-RC* ]]; then
+            FINAL_VERSION=$(echo "$VERSION" | sed 's/-RC[0-9]*//')
+            mvn versions:set -DnewVersion=$FINAL_VERSION
+            mvn versions:commit
+          else
+            FINAL_VERSION="$VERSION"
+          fi
           echo "final_version=$FINAL_VERSION" >> $GITHUB_OUTPUT
-          mvn versions:set -DnewVersion=$FINAL_VERSION
-          mvn versions:commit
 
       - name: Validate Build Again
         run: mvn verify
@@ -89,7 +90,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git commit -am "chore(release): finalize version ${{ steps.cleanup-version.outputs.final_version }}"
+          git diff --quiet || git commit -am "chore(release): finalize version ${{ steps.cleanup-version.outputs.final_version }}" || true
           git push
 
   release-create-tag:
@@ -98,7 +99,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FINAL_VERSION: ${{ needs.release-finalize-and-deploy.outputs.final_version }}
-
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
@@ -115,9 +115,9 @@ jobs:
   release-create-gh-release:
     name: Release - GitHub Release
     needs: release-create-tag
+    runs-on: ubuntu-latest
     env:
       FINAL_VERSION: ${{ needs.release-finalize-and-deploy.outputs.final_version }}
-
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
@@ -128,10 +128,9 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v$FINAL_VERSION
-          name: Release v$FINAL_VERSION
-          body: |
-            📦 Final version released: v$FINAL_VERSION
+          tag_name: v${{ env.FINAL_VERSION }}
+          name: Release v${{ env.FINAL_VERSION }}
+          body: 📦 Final version released: v${{ env.FINAL_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -139,7 +138,6 @@ jobs:
     name: Release - Bump Develop Branch to Next Snapshot
     needs: release-create-gh-release
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout Develop Branch
         uses: actions/checkout@v4
@@ -165,5 +163,5 @@ jobs:
 
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git commit -am "chore: start next snapshot $NEXT_VERSION on develop"
+          git diff --quiet || git commit -am "chore: start next snapshot $NEXT_VERSION on develop" || true
           git push origin develop

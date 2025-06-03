@@ -7,15 +7,12 @@ on:
         required: false
         type: string
         default: '21'
-
       dry-run:
         required: true
         type: boolean
-
       version:
         required: true
         type: string
-
     secrets:
       NEXUS_USERNAME:
         required: true
@@ -39,7 +36,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ inputs.java-version }}
-          distribution: 'temurin'
+          distribution: temurin
           cache: maven
 
       - name: Configure Maven settings.xml
@@ -60,7 +57,7 @@ jobs:
           [[ "$VERSION" == *-SNAPSHOT ]] || (echo "ERROR: Version is not a SNAPSHOT!" && exit 1)
 
       - name: Validate Build Before Deploy
-        run: mvn verify
+        run: mvn verify --batch-mode
 
       - name: Skipping deploy to Nexus
         if: ${{ inputs.dry-run == true }}

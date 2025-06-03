@@ -7,15 +7,12 @@ on:
         required: false
         type: string
         default: '21'
-
       dry-run:
         required: true
         type: boolean
-
       version:
         required: true
         type: string
-
     secrets:
       NEXUS_USERNAME:
         required: true
@@ -44,7 +41,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: ${{ inputs.java-version }}
-          distribution: 'temurin'
+          distribution: temurin
           cache: maven
 
       - name: Configure Maven settings.xml
@@ -61,7 +58,7 @@ jobs:
         id: version
         run: |
           set -euo pipefail
-          CURRENT_VERSION=${{ inputs.version }}
+          CURRENT_VERSION="${{ inputs.version }}"
           BASE_VERSION=$(echo "$CURRENT_VERSION" | sed 's/-.*//')
           echo "release_candidate_version=$BASE_VERSION" >> $GITHUB_OUTPUT
 
@@ -70,12 +67,12 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --tags
-          BASE=${{ steps.version.outputs.release_candidate_version }}
+          BASE="${{ steps.version.outputs.release_candidate_version }}"
           TAGS=$(git tag -l "$BASE-RC*" || true)
 
           RC_COUNT=1
           if [[ ! -z "$TAGS" ]]; then
-            LAST_RC=$(echo "$TAGS" | sed -E 's/.*-RC([0-9]+)/\1/' | sort -nr | head -n1)
+            LAST_RC=$(echo "$TAGS" | sed -E 's/.*-RC([0-9]+).*/\1/' | sort -nr | head -n1 || echo 0)
             RC_COUNT=$((LAST_RC + 1))
           fi
 
@@ -103,7 +100,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git commit -am "chore(release): set RC version ${{ steps.rc.outputs.next_rc_version }}"
+          git diff --quiet || git commit -am "chore(release): set RC version ${{ steps.rc.outputs.next_rc_version }}" || true
           git push
 
   release-candidate-tag:
@@ -112,7 +109,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       RC_VERSION: ${{ needs.release-candidate-deploy.outputs.next_rc_version }}
-
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
