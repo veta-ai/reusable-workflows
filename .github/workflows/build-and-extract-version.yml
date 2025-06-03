@@ -17,6 +17,9 @@ on:
       is_release:
         value: ${{ jobs.build.outputs.is_release }}
 
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   build:

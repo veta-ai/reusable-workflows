@@ -22,6 +22,7 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 jobs:
   library-build-and-version:
