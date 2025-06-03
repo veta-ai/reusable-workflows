@@ -130,7 +130,7 @@ jobs:
         with:
           tag_name: v${{ env.FINAL_VERSION }}
           name: Release v${{ env.FINAL_VERSION }}
-          body: 📦 Final version released: v${{ env.FINAL_VERSION }}
+          body: "📦 Final version released: v${{ env.FINAL_VERSION }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
