@@ -1,0 +1,65 @@
+# ------------------------------
+# .build-and-extract-version.yml
+# ------------------------------
+name: Build and Extract Version
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        type: string
+        required: false
+        default: '21'
+    outputs:
+      version:
+        description: "Project version extracted from pom.xml"
+        value: ${{ jobs.build.outputs.version }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+      is_snapshot: ${{ steps.classify.outputs.is_snapshot }}
+      is_release_candidate: ${{ steps.classify.outputs.is_release_candidate }}
+      is_release: ${{ steps.classify.outputs.is_release }}
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+          cache: maven
+
+      - name: Build and Test
+        run: mvn clean verify
+
+      - name: Run Checkstyle
+        run: mvn checkstyle:check
+
+      - name: Extract Version
+        id: extract
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Detect Release Type
+        id: classify
+        run: |
+          VERSION="${{ steps.extract.outputs.version }}"
+          echo "Detected version: $VERSION"
+
+          if [[ "$VERSION" == *-SNAPSHOT ]]; then
+            echo "is_snapshot=true" >> $GITHUB_OUTPUT
+            echo "is_release_candidate=false" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          elif [[ "$VERSION" == *-RC* ]]; then
+            echo "is_snapshot=false" >> $GITHUB_OUTPUT
+            echo "is_release_candidate=true" >> $GITHUB_OUTPUT
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "is_snapshot=false" >> $GITHUB_OUTPUT
+            echo "is_release_candidate=false" >> $GITHUB_OUTPUT
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          fi

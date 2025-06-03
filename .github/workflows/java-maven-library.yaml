@@ -1,0 +1,67 @@
+name: Java Library Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        type: string
+        default: '21'
+      
+      base-branch:
+        required: false
+        type: string
+        default: 'develop'
+
+    secrets:
+      NEXUS_USERNAME:
+        required: false
+      NEXUS_PASSWORD:
+        required: false
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+
+  build:
+    name: Build & Extract Version
+    uses: ./.github/workflows/.build-and-extract-version.yml
+    with:
+      java-version: ${{ inputs.java-version }}
+
+  deploy-artifact-snapshot:
+    if: ${{ needs.build.outputs.is_snapshot == 'true' }}
+    needs: build
+    uses: ./.github/workflows/deploy-java-maven-snapshot.yml
+    with:
+      java-version: ${{ inputs.java-version }}
+      dry-run: false
+    secrets: inherit
+
+  deploy-artifact-release-candidate:
+    if: ${{ needs.build.outputs.is_release_candidate == 'true' }}
+    needs: build
+    uses: ./.github/workflows/deploy-java-maven-release-candidate.yml
+    with:
+      java-version: ${{ inputs.java-version }}
+      dry-run: false
+    secrets: inherit
+
+  deploy-artifact-release:
+    if: ${{ needs.build.outputs.is_release == 'true' }}
+    needs: build
+    uses: ./.github/workflows/deploy-java-maven-release.yml
+    with:
+      java-version: ${{ inputs.java-version }}
+      dry-run: true
+    secrets: inherit
+
+  open-pr:
+    if: ${{ needs.build.outputs.is_snapshot == 'true' }}
+    needs: [build, deploy-artifact-snapshot]
+    runs-on: ubuntu-latest
+    uses: ./.github/workflows/open-pr.yml
+    with:
+      base-branch: ${{ inputs.base-branch }}
+    secrets: inherit

@@ -1,0 +1,178 @@
+# ------------------------------
+# .build-and-extract-version.yml
+# ------------------------------
+name: Build and Extract Version
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        type: string
+        required: false
+        default: '21'
+    outputs:
+      version:
+        description: "Project version extracted from pom.xml"
+        value: ${{ jobs.build.outputs.version }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+          cache: maven
+
+      - name: Build and Test
+        run: mvn clean verify
+
+      - name: Extract Version
+        id: extract
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+# ------------------------------
+# .docker-build-only.yml
+# ------------------------------
+name: Docker Build Only
+
+on:
+  workflow_call:
+    inputs:
+      java-version:
+        type: string
+        default: '21'
+    secrets:
+      AWS_ACCOUNT_ID:
+        required: false
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ inputs.java-version }}
+          cache: maven
+      - uses: docker/setup-buildx-action@v2
+      - name: Build Docker Image
+        run: |
+          docker buildx build --platform linux/amd64 -t my-app:latest .
+
+# ------------------------------
+# .docker-push.yml
+# ------------------------------
+name: Docker Push to ECR
+
+on:
+  workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+    inputs:
+      aws-region:
+        type: string
+        default: 'us-east-1'
+
+jobs:
+  push-image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ inputs.aws-region }}
+      - uses: aws-actions/amazon-ecr-login@v2
+      - name: Push Docker Image
+        run: |
+          docker tag my-app:latest ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/my-app:latest
+          docker push ${{ vars.AWS_ACCOUNT_ID }}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com/my-app:latest
+
+# ------------------------------
+# .terraform-plan.yml
+# ------------------------------
+name: Terraform Plan
+
+on:
+  workflow_call:
+    inputs:
+      terraform_version:
+        type: string
+      environment:
+        type: string
+      image_tag:
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Terraform Init & Plan
+        run: |
+          cd infra
+          terraform init
+          terraform validate
+          terraform plan -var-file="${{ inputs.environment }}.tfvars" -var="image_tag=${{ inputs.image_tag }}"
+
+# ------------------------------
+# .terraform-apply.yml
+# ------------------------------
+name: Terraform Apply
+
+on:
+  workflow_call:
+    inputs:
+      terraform_version:
+        type: string
+      environment:
+        type: string
+      image_tag:
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: true
+      AWS_SECRET_ACCESS_KEY:
+        required: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Terraform Apply
+        run: |
+          cd infra
+          terraform apply -auto-approve -var-file="${{ inputs.environment }}.tfvars" -var="image_tag=${{ inputs.image_tag }}"
