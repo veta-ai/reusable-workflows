@@ -31,7 +31,7 @@ jobs:
 
   build:
     name: Build & Extract Version
-    uses: ./.github/workflows/.build-and-extract-version.yml
+    uses: ./.github/workflows/build-and-extract-version.yml
     with:
       java-version: ${{ inputs.java-version }}
 
@@ -42,6 +42,7 @@ jobs:
     with:
       java-version: ${{ inputs.java-version }}
       dry-run: ${{ inputs.dry-run }}
+      version: ${{ needs.build.outputs.version }}
     secrets: inherit
 
   deploy-artifact-release-candidate:
@@ -51,6 +52,7 @@ jobs:
     with:
       java-version: ${{ inputs.java-version }}
       dry-run: ${{ inputs.dry-run }}
+      version: ${{ needs.build.outputs.version }}
     secrets: inherit
 
   deploy-artifact-release:
@@ -60,6 +62,7 @@ jobs:
     with:
       java-version: ${{ inputs.java-version }}
       dry-run: ${{ inputs.dry-run }}
+      version: ${{ needs.build.outputs.version }}
     secrets: inherit
 
   open-pr:

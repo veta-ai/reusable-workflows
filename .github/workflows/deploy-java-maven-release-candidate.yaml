@@ -8,6 +8,14 @@ on:
         type: string
         default: '21'
 
+      dry-run:
+        required: true
+        type: boolean
+
+      version:
+        required: true
+        type: string
+
 permissions:
   contents: write
   packages: write
@@ -44,37 +52,42 @@ jobs:
               "password": "${{ secrets.NEXUS_PASSWORD }}"
             }]
 
-      - name: Extract Base Version
+      - name: Extract RC Version
         id: version
         run: |
-          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          BASE_VERSION=$(echo $CURRENT_VERSION | sed 's/-.*//')
-          echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+          CURRENT_VERSION=${{ inputs.version }}
+          NEW_VERSION=$(echo $CURRENT_VERSION | sed 's/-.*//')
+          echo "release_candidate_version=$RELEASE_CANDIDATE_VERSION" >> $GITHUB_OUTPUT
 
       - name: Calculate Next RC Version
         id: rc
         run: |
           git fetch --tags
-          BASE=${{ steps.version.outputs.base_version }}
+          BASE=${{ steps.version.outputs.release_candidate_version }}
           TAGS=$(git tag -l "${BASE}-RC*" || true)
           echo "Existing RC tags:"
           echo "$TAGS"
 
-          RC_NUMBER=1
+          RC_COUNT=1
           if [[ ! -z "$TAGS" ]]; then
             LAST_RC=$(echo "$TAGS" | sed -E 's/.*-RC([0-9]+)/\1/' | sort -nr | head -n1)
-            RC_NUMBER=$((LAST_RC + 1))
+            RC_COUNT=$((LAST_RC + 1))
           fi
 
-          NEW_VERSION="${BASE}-RC${RC_NUMBER}"
-          echo "next_rc_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          NEW_RC_VERSION="${BASE}-RC${RC_COUNT}"
+          echo "next_rc_version=$NEW_RC_VERSION" >> $GITHUB_OUTPUT
 
       - name: Set RC Version
         run: |
           mvn versions:set -DnewVersion=${{ steps.rc.outputs.next_rc_version }}
           mvn versions:commit
 
-      - name: Deploy RC Version
+      - name: Skipping deploy to Nexus
+        if: ${{ inputs.dry-run == true }}
+        run: echo "🟡 Dry-run mode ON — skipping actual deploy to Nexus."
+
+      - name: Deploy to Nexus
+        if: ${{ inputs.dry-run == false }}
         run: mvn deploy -DskipTests --batch-mode
 
       - name: Commit RC Version

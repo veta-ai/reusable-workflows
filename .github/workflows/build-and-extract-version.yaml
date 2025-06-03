@@ -11,9 +11,10 @@ on:
         required: false
         default: '21'
     outputs:
-      version:
-        description: "Project version extracted from pom.xml"
-        value: ${{ jobs.build.outputs.version }}
+      version: ${{ jobs.build.outputs.version }}
+      is_snapshot: ${{ jobs.build.outputs.is_snapshot }}
+      is_release_candidate: ${{ jobs.build.outputs.is_release_candidate }}
+      is_release: ${{ jobs.build.outputs.is_release }}
 
 jobs:
   build:

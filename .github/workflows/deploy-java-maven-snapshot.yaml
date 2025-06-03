@@ -9,9 +9,12 @@ on:
         default: '21'
 
       dry-run:
-        required: false
+        required: true
         type: boolean
-        default: false 
+
+      version:
+        required: true
+        type: string
 
     secrets:
       NEXUS_USERNAME:
@@ -29,8 +32,6 @@ jobs:
     name: Deploy java snapshot to Nexus
     needs: build
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.extract_version.outputs.version }}
 
     steps:
       - name: Checkout Project
@@ -54,12 +55,10 @@ jobs:
             }]
 
       - name: Validate SNAPSHOT version
-        id: extract_version
         run: |
-          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "Detected version: $VERSION"
+          VERSION="${{ inputs.version }}"
+          echo "Detected version: ${{ inputs.version }}"
           [[ "$VERSION" == *-SNAPSHOT ]] || (echo "ERROR: Version is not a SNAPSHOT!" && exit 1)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Skipping deploy to Nexus
         if: ${{ inputs.dry-run == true }}
