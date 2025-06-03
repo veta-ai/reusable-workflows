@@ -20,8 +20,7 @@ on:
         required: true
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
 
 jobs:
   release-candidate-deploy:
