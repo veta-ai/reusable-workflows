@@ -12,6 +12,11 @@ on:
         type: string
         default: 'develop'
 
+      dry-run:
+        type: boolean
+        required: false
+        default: false
+
     secrets:
       NEXUS_USERNAME:
         required: false
@@ -36,7 +41,7 @@ jobs:
     uses: ./.github/workflows/deploy-java-maven-snapshot.yml
     with:
       java-version: ${{ inputs.java-version }}
-      dry-run: false
+      dry-run: ${{ inputs.dry-run }}
     secrets: inherit
 
   deploy-artifact-release-candidate:
@@ -45,7 +50,7 @@ jobs:
     uses: ./.github/workflows/deploy-java-maven-release-candidate.yml
     with:
       java-version: ${{ inputs.java-version }}
-      dry-run: false
+      dry-run: ${{ inputs.dry-run }}
     secrets: inherit
 
   deploy-artifact-release:
@@ -54,7 +59,7 @@ jobs:
     uses: ./.github/workflows/deploy-java-maven-release.yml
     with:
       java-version: ${{ inputs.java-version }}
-      dry-run: true
+      dry-run: ${{ inputs.dry-run }}
     secrets: inherit
 
   open-pr:
