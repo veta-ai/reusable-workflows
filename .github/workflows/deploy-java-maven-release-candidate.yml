@@ -43,6 +43,13 @@ jobs:
           distribution: temurin
           cache: maven
 
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       - name: Configure Maven settings.xml
         uses: s4u/maven-settings-action@v3.1.0
         with:
