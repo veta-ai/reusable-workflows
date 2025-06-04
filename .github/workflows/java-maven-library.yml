@@ -34,7 +34,7 @@ jobs:
 
   library-deploy-snapshot:
     name: Deploy Snapshot to Nexus
-    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' }}
+    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' && contains(github.ref_name, 'SNAPSHOT') }}
     needs: library-build-and-version
     uses: ./.github/workflows/deploy-java-maven-snapshot.yml
     with:
@@ -45,7 +45,7 @@ jobs:
 
   library-deploy-release-candidate:
     name: Deploy RC to Nexus
-    if: ${{ needs.library-build-and-version.outputs.is_release_candidate == 'true' }}
+    if: ${{ needs.library-build-and-version.outputs.is_release_candidate == 'true' && contains(github.ref_name, 'RC') }}
     needs: library-build-and-version
     uses: ./.github/workflows/deploy-java-maven-release-candidate.yml
     with:
@@ -56,7 +56,7 @@ jobs:
 
   library-deploy-final-release:
     name: Deploy Final Release to Nexus
-    if: ${{ needs.library-build-and-version.outputs.is_release == 'true' }}
+    if: ${{ needs.library-build-and-version.outputs.is_release == 'true' && !contains(github.ref_name, 'SNAPSHOT') && !contains(github.ref_name, 'RC') }}
     needs: library-build-and-version
     uses: ./.github/workflows/deploy-java-maven-release.yml
     with:
@@ -67,7 +67,7 @@ jobs:
 
   library-open-snapshot-pr:
     name: Open PR for Snapshot Integration
-    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' }}
+    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' && contains(github.ref_name, 'SNAPSHOT') }}
     needs:
       - library-build-and-version
       - library-deploy-snapshot
