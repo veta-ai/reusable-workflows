@@ -34,7 +34,7 @@ jobs:
 
   library-deploy-snapshot:
     name: Deploy Snapshot to Nexus
-    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' && contains(github.ref_name, 'SNAPSHOT') }}
+    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' && contains(github.ref_name, 'feature') }}
     needs: library-build-and-version
     uses: ./.github/workflows/deploy-java-maven-snapshot.yml
     with:
@@ -45,7 +45,7 @@ jobs:
 
   library-deploy-release-candidate:
     name: Deploy RC to Nexus
-    if: ${{ needs.library-build-and-version.outputs.is_release_candidate == 'true' && contains(github.ref_name, 'RC') }}
+    if: ${{ needs.library-build-and-version.outputs.is_release_candidate == 'true' && contains(github.ref_name, 'release') }}
     needs: library-build-and-version
     uses: ./.github/workflows/deploy-java-maven-release-candidate.yml
     with:
@@ -56,7 +56,7 @@ jobs:
 
   library-deploy-final-release:
     name: Deploy Final Release to Nexus
-    if: ${{ needs.library-build-and-version.outputs.is_release == 'true' && !contains(github.ref_name, 'SNAPSHOT') && !contains(github.ref_name, 'RC') }}
+    if: ${{ needs.library-build-and-version.outputs.is_release == 'true' && !contains(github.ref_name, 'SNAPSHOT') && !contains(github.ref_name, 'main') }}
     needs: library-build-and-version
     uses: ./.github/workflows/deploy-java-maven-release.yml
     with:
