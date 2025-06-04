@@ -34,7 +34,7 @@ jobs:
 
   library-deploy-snapshot:
     name: Deploy Snapshot to Nexus
-    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' && contains(github.ref_name, 'feature') }}
+    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' && contains(github.ref_name, 'develop') }}
     needs: library-build-and-version
     uses: ./.github/workflows/deploy-java-maven-snapshot.yml
     with:
@@ -67,7 +67,7 @@ jobs:
 
   library-open-snapshot-pr:
     name: Open PR for Snapshot Integration
-    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' && contains(github.ref_name, 'SNAPSHOT') }}
+    if: ${{ needs.library-build-and-version.outputs.is_snapshot == 'true' && contains(github.ref_name, 'feature') }}
     needs:
       - library-build-and-version
       - library-deploy-snapshot
