@@ -21,7 +21,6 @@ permissions:
 jobs:
   prepare-release:
     name: Prepare & Deploy Final Version
-    needs: build
     runs-on: ubuntu-latest
     outputs:
       final_version: ${{ steps.cleanup-version.outputs.final_version }}
@@ -64,7 +63,6 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Finalize Version (remove RC)
-        if: contains(steps.current-version.outputs.version, '-RC')
         id: cleanup-version
         run: |
           FINAL_VERSION=$(echo "${{ steps.current-version.outputs.version }}" | sed 's/-RC[0-9]*//')
@@ -103,7 +101,8 @@ jobs:
 
   create-git-release:
     name: Create GitHub Release
-    needs: create-tag
+    needs: [prepare-release, create-tag]
+    runs-on: ubuntu-latest
     env:
       FINAL_VERSION: ${{ needs.prepare-release.outputs.final_version }}
 
@@ -117,16 +116,19 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: v$FINAL_VERSION
-          name: Release v$FINAL_VERSION
+          tag_name: v${{ env.FINAL_VERSION }}
+          name: Release v${{ env.FINAL_VERSION }}
           body: |
-            📦 Final version released: v$FINAL_VERSION
+            📦 Final version released: v${{ env.FINAL_VERSION }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   bump-develop:
     name: Bump Develop Branch to Next Snapshot
-    needs: create-git-release
+    runs-on: ubuntu-latest
+    needs: [prepare-release, create-git-release]
+    env:
+      FINAL_VERSION: ${{ needs.prepare-release.outputs.final_version }}
 
     steps:
       - name: Checkout Develop Branch

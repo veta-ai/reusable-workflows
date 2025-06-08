@@ -14,21 +14,21 @@ on:
         required: true
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
   build:
     name: Build & Test
     if: startsWith(github.ref, 'refs/heads/release/')
-    uses: ./.github/workflows/build-java-maven.yml
+    uses: ./.github/workflows/build-java-maven.yaml
     with:
       java-version: ${{ inputs.java-version }}
 
   prepare-rc:
     name: Prepare RC Version & Deploy
     needs: build
-    uses: ./.github/workflows/deploy-java-maven-release-candidate.yml
+    uses: ./.github/workflows/deploy-java-maven-release-candidate.yaml
     secrets: inherit    
     with:
       java-version: ${{ inputs.java-version }}

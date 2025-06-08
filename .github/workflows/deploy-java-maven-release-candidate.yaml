@@ -15,7 +15,6 @@ permissions:
 jobs:
   prepare-rc:
     name: Prepare RC Version & Deploy
-    needs: build
     runs-on: ubuntu-latest
     outputs:
       next_rc_version: ${{ steps.rc.outputs.next_rc_version }}

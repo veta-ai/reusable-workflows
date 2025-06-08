@@ -20,15 +20,15 @@ permissions:
 jobs:
   build:
     name: Build & Test
-    if: startsWith(github.ref, 'refs/heads/develop/')
-    uses: ./.github/workflows/build-java-maven.yml
+    # if: startsWith(github.ref, 'refs/heads/develop/')
+    uses: ./.github/workflows/build-java-maven.yaml
     with:
       java-version: ${{ inputs.java-version }}
 
   deploy-snapshot:
     name: Deploy -SNAPSHOT to Nexus
     needs: build
-    uses: ./.github/workflows/deploy-java-maven-snapshot.yml
+    uses: ./.github/workflows/deploy-java-maven-snapshot.yaml
     secrets: inherit
     with:
       java-version: ${{ inputs.java-version }}

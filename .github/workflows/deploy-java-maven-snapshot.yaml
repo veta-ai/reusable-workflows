@@ -27,7 +27,6 @@ permissions:
 jobs:
   deploy-java-maven-snapshot:
     name: Deploy java snapshot to Nexus
-    needs: build
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.extract_version.outputs.version }}

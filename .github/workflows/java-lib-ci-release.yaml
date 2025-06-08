@@ -14,20 +14,20 @@ on:
         required: true
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
   build:
     name: Build & Test
-    uses: ./.github/workflows/build-java-maven.yml
+    uses: ./.github/workflows/build-java-maven.yaml
     with:
       java-version: ${{ inputs.java-version }}
 
   prepare-release:
     name: Prepare & Deploy Final Version
     needs: build
-    uses: ./.github/workflows/deploy-java-maven-release.yml
+    uses: ./.github/workflows/deploy-java-maven-release.yaml
     with:
       java-version: ${{ inputs.java-version }}
     secrets: inherit

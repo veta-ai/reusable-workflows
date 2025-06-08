@@ -15,20 +15,20 @@ on:
 
 permissions:
   contents: write
+  packages: write
   pull-requests: write
 
 jobs:
   build:
     name: Build & Test
     if: startsWith(github.ref, 'refs/heads/feature/')
-    uses: ./.github/workflows/build-java-maven.yml
+    uses: ./.github/workflows/build-java-maven.yaml
     with:
       java-version: ${{ inputs.java-version }}
 
   open-pr:
     needs: build
-    runs-on: ubuntu-latest
-    uses: ./.github/workflows/open-pr.yml
+    uses: ./.github/workflows/open-pr.yaml
     with:
       base-branch: ${{ inputs.base-branch }}
     secrets: inherit
