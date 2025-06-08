@@ -23,7 +23,7 @@ jobs:
           REPO_NAME: ${{ github.event.repository.name }}
           HEAD_BRANCH: ${{ github.head_ref || github.ref_name }}
           BASE_BRANCH: ${{ inputs.base-branch }}
-          PR_TITLE: '[Auto] PR from $HEAD_BRANCH to $BASE_BRANCH'
+          PR_TITLE: '[Auto] PR from ${{ github.head_ref || github.ref_name }} to ${{ inputs.base-branch }}'
           PR_BODY: 'Auto-generated pull request after successful CI on feature branch.'
         run: |
           echo "Tentando criar PR de: $HEAD_BRANCH para $BASE_BRANCH"
