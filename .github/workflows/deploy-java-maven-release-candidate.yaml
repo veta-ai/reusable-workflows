@@ -40,15 +40,20 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      # - name: Configure Maven settings.xml
-      #   uses: s4u/maven-settings-action@v3.1.0
-      #   with:
-      #     servers: |
-      #       [{
-      #         "id": "nexus-releases",
-      #         "username": "${{ secrets.NEXUS_USERNAME }}",
-      #         "password": "${{ secrets.NEXUS_PASSWORD }}"
-      #       }]
+      - name: Configure Maven settings.xml
+        uses: s4u/maven-settings-action@v3.1.0
+        with:
+          servers: |
+            [{
+              "id": "nexus-releases",
+              "username": "${{ secrets.NEXUS_USERNAME }}",
+              "password": "${{ secrets.NEXUS_PASSWORD }}"
+            },
+            {
+              "id": "github",
+              "username": "${{ github.actor }}",
+              "password": "${{ secrets.GITHUB_TOKEN }}"
+            }]
 
       - name: Extract Base Version
         id: version
