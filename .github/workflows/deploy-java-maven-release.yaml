@@ -37,7 +37,6 @@ jobs:
         with:
           java-version: ${{ inputs.java-version }}
           distribution: 'temurin'
-          # cache: maven
 
       - name: Cache Maven packages
         uses: actions/cache@v4
@@ -75,8 +74,8 @@ jobs:
           mvn versions:set -DnewVersion=$FINAL_VERSION
           mvn versions:commit
 
-      - name: Deploy Final Release
-        run: mvn deploy -DskipTests --batch-mode
+      # - name: Deploy Final Release
+      #   run: mvn deploy -DskipTests --batch-mode
 
       - name: Commit Final Version
         run: |
@@ -142,20 +141,35 @@ jobs:
           persist-credentials: true
           ref: develop
 
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ inputs.java-version }}
+          distribution: 'temurin'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       - name: Bump develop to next snapshot
         run: |
-          git fetch origin develop
-          git checkout develop
-
           MAJOR=$(echo "$FINAL_VERSION" | cut -d. -f1)
           MINOR=$(echo "$FINAL_VERSION" | cut -d. -f2)
           NEXT_MINOR=$((MINOR + 1))
           NEXT_VERSION="$MAJOR.$NEXT_MINOR.0-SNAPSHOT"
 
           echo "Updating develop to: $NEXT_VERSION"
+
+      - name: Set Next Version
+        run: |    
           mvn versions:set -DnewVersion=$NEXT_VERSION
           mvn versions:commit
 
+      - name: Commit Next Version
+        run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git commit -am "chore: start next snapshot $NEXT_VERSION on develop"

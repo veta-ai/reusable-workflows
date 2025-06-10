@@ -31,7 +31,6 @@ jobs:
         with:
           java-version: ${{ inputs.java-version }}
           distribution: 'temurin'
-          # cache: maven
 
       - name: Cache Maven packages
         uses: actions/cache@v4

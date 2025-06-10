@@ -7,11 +7,13 @@ on:
         required: false
         type: string
         default: '21'
-      
       base-branch:
         required: false
         type: string
         default: 'develop'
+      sonar_project_key:
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -25,6 +27,7 @@ jobs:
     uses: ./.github/workflows/build-java-maven.yaml
     with:
       java-version: ${{ inputs.java-version }}
+      sonar_project_key: ${{ inputs.sonar_project_key }}
 
   open-pr:
     needs: build

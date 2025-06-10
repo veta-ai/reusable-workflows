@@ -13,6 +13,10 @@ on:
         required: false
         type: string
         default: '1.9.6'
+
+      sonar_project_key:
+        required: true
+        type: string
     
     secrets:
       NEXUS_USERNAME:
@@ -30,6 +34,7 @@ jobs:
     uses: ./.github/workflows/build-java-maven.yml
     with:
       java-version: ${{ inputs.java-version }}
+      sonar_project_key: ${{ inputs.sonar_project_key }}
 
   deploy-artifact:
     name: Validate and Version RC

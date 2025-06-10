@@ -7,6 +7,9 @@ on:
         required: false
         type: string
         default: '21'
+      sonar_project_key:
+        required: true
+        type: string
     secrets:
       NEXUS_USERNAME:
         required: true
@@ -24,6 +27,7 @@ jobs:
     uses: ./.github/workflows/build-java-maven.yaml
     with:
       java-version: ${{ inputs.java-version }}
+      sonar_project_key: ${{ inputs.sonar_project_key }}
 
   deploy-snapshot:
     name: Deploy -SNAPSHOT to Nexus

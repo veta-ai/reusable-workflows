@@ -1,4 +1,4 @@
-name: Create and Push Docker Image to ECR
+name: Create and Push Docker Image
 
 on:
   workflow_call:
@@ -7,18 +7,6 @@ on:
         required: false
         type: string
         default: '21'
-      
-      aws-region:
-        required: false
-        type: string
-        default: 'us-east-1'
-    
-    secrets:
-      AWS_ACCESS_KEY_ID:
-        required: false
-
-      AWS_SECRET_ACCESS_KEY:
-        required: false
 
 permissions:
   contents: read
@@ -27,6 +15,7 @@ permissions:
 jobs:
   create-docker-image:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,15 +23,8 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ inputs.aws-region }}
-
-      - name: Log in to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
+      - name: Log in to GitHub Container Registry
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Extract Base Version
         id: version
@@ -51,18 +33,15 @@ jobs:
           BASE_VERSION=$(echo $CURRENT_VERSION | sed 's/-.*//')
           echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build and Push Docker image to ECR
+      - name: Build and Push Docker image to GitHub Packages
         env:
-          AWS_ACCOUNT_ID: ${{ vars.AWS_ACCOUNT_ID }}
-          ECR_REPOSITORY: ${{ github.repository }}-ecr
+          IMAGE_NAME: ghcr.io/${{ github.repository }}
           IMAGE_TAG: ${{ steps.version.outputs.base_version }}
         run: |
-          ECR_REGISTRY=${AWS_ACCOUNT_ID}.dkr.ecr.${{ inputs.aws-region }}.amazonaws.com
-
           docker buildx build \
             --platform linux/amd64 \
-            --tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            --tag $IMAGE_NAME:$IMAGE_TAG \
+            --tag $IMAGE_NAME:latest \
             --push \
-            --cache-from=type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:build-cache \
-            --cache-to=type=registry,ref=$ECR_REGISTRY/$ECR_REPOSITORY:build-cache,mode=max \
+            --cache-to=type=inline \
             .

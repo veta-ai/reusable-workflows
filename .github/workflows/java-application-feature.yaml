@@ -24,6 +24,9 @@ on:
         type: string
         default: 'develop'
     
+      sonar_project_key:
+        required: true
+        type: string
     
     secrets:
       AWS_ACCESS_KEY_ID:
@@ -41,6 +44,7 @@ jobs:
     uses: ./.github/workflows/build-java-maven.yml
     with:
       java-version: ${{ inputs.java-version }}
+      sonar_project_key: ${{ inputs.sonar_project_key }}
 
   validate-terraform:
     uses: ./.github/workflows/apply-terraform-infra.yml
