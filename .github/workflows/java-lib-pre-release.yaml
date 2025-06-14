@@ -10,11 +10,6 @@ on:
       sonar_project_key:
         required: true
         type: string
-    secrets:
-      NEXUS_USERNAME:
-        required: true
-      NEXUS_PASSWORD:
-        required: true
 
 permissions:
   contents: write

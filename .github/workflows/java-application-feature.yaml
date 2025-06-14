@@ -8,11 +8,6 @@ on:
         required: false
         type: string
         default: '21'
-      
-      aws-region:
-        required: false
-        type: string
-        default: 'us-east-1'
 
       terraform-version:
         required: false
@@ -27,27 +22,22 @@ on:
       sonar_project_key:
         required: true
         type: string
-    
-    secrets:
-      AWS_ACCESS_KEY_ID:
-        required: false
-      AWS_SECRET_ACCESS_KEY:
-        required: false
 
 permissions:
   contents: write
+  packages: write
   pull-requests: write
 
 jobs:
   build:
     name: Build & Test
-    uses: ./.github/workflows/build-java-maven.yml
+    uses: ./.github/workflows/build-java-maven.yaml
     with:
       java-version: ${{ inputs.java-version }}
       sonar_project_key: ${{ inputs.sonar_project_key }}
 
   validate-terraform:
-    uses: ./.github/workflows/apply-terraform-infra.yml
+    uses: ./.github/workflows/apply-terraform-infra.yaml
     needs: [build]
     secrets: inherit
     with:
@@ -58,7 +48,7 @@ jobs:
   open-pr:
     needs: build
     runs-on: ubuntu-latest
-    uses: ./.github/workflows/open-pr.yml
+    uses: ./.github/workflows/open-pr.yaml
     secrets: inherit
     with:
       base-branch: '${{ inputs.base-branch }}'

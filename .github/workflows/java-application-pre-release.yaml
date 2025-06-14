@@ -17,12 +17,6 @@ on:
       sonar_project_key:
         required: true
         type: string
-    
-    secrets:
-      NEXUS_USERNAME:
-        required: true
-      NEXUS_PASSWORD:
-        required: true
 
 permissions:
   contents: read
@@ -31,7 +25,7 @@ permissions:
 jobs:
   build:
     name: Build & Test
-    uses: ./.github/workflows/build-java-maven.yml
+    uses: ./.github/workflows/build-java-maven.yaml
     with:
       java-version: ${{ inputs.java-version }}
       sonar_project_key: ${{ inputs.sonar_project_key }}
@@ -39,7 +33,7 @@ jobs:
   deploy-artifact:
     name: Validate and Version RC
     needs: build
-    uses: ./.github/workflows/deploy-java-maven-release-candidate.yml
+    uses: ./.github/workflows/deploy-java-maven-release-candidate.yaml
     secrets: inherit
     with:
       java-version: ${{ inputs.java-version }}
@@ -48,15 +42,15 @@ jobs:
     name: Create Docker Image
     needs: [deploy-artifact]
     secrets: inherit
-    uses: ./.github/workflows/create-docker-image.yml
+    uses: ./.github/workflows/create-docker-image.yaml
     with:
       java-version: ${{ inputs.java-version }}
 
-  apply-terraform:
-    uses: ./.github/workflows/apply-terraform-infra.yml
-    needs: [create-docker-image]
-    secrets: inherit
-    with:
-      terraform_version: ${{ inputs.terraform-version }}
-      base_version: ${{ needs.deploy-artifact.outputs.next_rc_version }}
-      deploy_infra: true
+  # apply-terraform:
+  #   uses: ./.github/workflows/apply-terraform-infra.yaml
+  #   needs: [create-docker-image]
+  #   secrets: inherit
+  #   with:
+  #     terraform_version: ${{ inputs.terraform-version }}
+  #     base_version: ${{ needs.deploy-artifact.outputs.next_rc_version }}
+  #     deploy_infra: false

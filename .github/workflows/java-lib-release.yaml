@@ -1,4 +1,4 @@
-name: CI - Snapshot Deploy (Java Library)
+name: CI - Final Release (Java Library)
 
 on:
   workflow_call:
@@ -10,29 +10,23 @@ on:
       sonar_project_key:
         required: true
         type: string
-    secrets:
-      NEXUS_USERNAME:
-        required: true
-      NEXUS_PASSWORD:
-        required: true
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
   build:
     name: Build & Test
-    # if: startsWith(github.ref, 'refs/heads/develop/')
     uses: ./.github/workflows/build-java-maven.yaml
     with:
       java-version: ${{ inputs.java-version }}
       sonar_project_key: ${{ inputs.sonar_project_key }}
 
-  deploy-snapshot:
-    name: Deploy -SNAPSHOT to Nexus
+  prepare-release:
+    name: Prepare & Deploy Final Version
     needs: build
-    uses: ./.github/workflows/deploy-java-maven-snapshot.yaml
-    secrets: inherit
+    uses: ./.github/workflows/deploy-java-maven-release.yaml
     with:
       java-version: ${{ inputs.java-version }}
+    secrets: inherit

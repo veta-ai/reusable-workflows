@@ -8,12 +8,6 @@ on:
         type: string
         default: '21'
 
-    secrets:
-      NEXUS_USERNAME:
-        required: true
-      NEXUS_PASSWORD:
-        required: true
-
 permissions:
   contents: write
   packages: write
@@ -74,8 +68,8 @@ jobs:
           mvn versions:set -DnewVersion=$FINAL_VERSION
           mvn versions:commit
 
-      # - name: Deploy Final Release
-      #   run: mvn deploy -DskipTests --batch-mode
+      - name: Deploy Final Release
+        run: mvn deploy -DskipTests --batch-mode
 
       - name: Commit Final Version
         run: |

@@ -9,13 +9,13 @@ Este repositório contém os workflows reutilizáveis e pipelines padronizados p
 
 | Workflow | Função |
 |----------|--------|
-| `build-java-maven.yml` | Build & Test de projetos Java com Maven |
-| `deploy-java-maven-snapshot.yml` | Deploy de versões `-SNAPSHOT` no Nexus |
-| `deploy-java-maven-release-candidate.yml` | Gera versão `RC`, publica no Nexus e cria tag |
-| `deploy-java-maven-release.yml` | Publica versão final, cria GitHub Release e faz bump da `develop` |
-| `create-docker-image.yml` | Gera imagem Docker e publica no ECR |
-| `apply-terraform-infra.yml` | Aplica infraestrutura com Terraform baseado no ambiente |
-| `open-pr.yml` | Cria Pull Request automático de `feature/*` para `develop` |
+| `build-java-maven.yaml` | Build & Test de projetos Java com Maven |
+| `deploy-java-maven-snapshot.yaml` | Deploy de versões `-SNAPSHOT` no Nexus |
+| `deploy-java-maven-release-candidate.yaml` | Gera versão `RC`, publica no Nexus e cria tag |
+| `deploy-java-maven-release.yaml` | Publica versão final, cria GitHub Release e faz bump da `develop` |
+| `create-docker-image.yaml` | Gera imagem Docker e publica no ECR |
+| `apply-terraform-infra.yaml` | Aplica infraestrutura com Terraform baseado no ambiente |
+| `open-pr.yaml` | Cria Pull Request automático de `feature/*` para `develop` |
 
 ---
 

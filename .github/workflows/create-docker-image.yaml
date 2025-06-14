@@ -7,6 +7,10 @@ on:
         required: false
         type: string
         default: '21'
+      latest-version:
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -37,11 +41,15 @@ jobs:
         env:
           IMAGE_NAME: ghcr.io/${{ github.repository }}
           IMAGE_TAG: ${{ steps.version.outputs.base_version }}
+          LATEST_VERSION: ${{ inputs.latest-version }}
         run: |
-          docker buildx build \
-            --platform linux/amd64 \
-            --tag $IMAGE_NAME:$IMAGE_TAG \
-            --tag $IMAGE_NAME:latest \
-            --push \
-            --cache-to=type=inline \
-            .
+          BUILD_CMD="docker buildx build --platform linux/amd64 --tag $IMAGE_NAME:$IMAGE_TAG"
+          
+          if [ "$LATEST_VERSION" == "true" ]; then
+            BUILD_CMD="$BUILD_CMD --tag $IMAGE_NAME:latest"
+          fi
+
+          BUILD_CMD="$BUILD_CMD --push --cache-to=type=inline ."
+
+          echo "Running build command: $BUILD_CMD"
+          eval $BUILD_CMD
