@@ -52,6 +52,13 @@ jobs:
       - name: Configure Maven settings.xml
         uses: s4u/maven-settings-action@v3.1.0    
         with:
+          githubServer: false
+          servers: |
+            [{
+              "id": "github",
+              "username": "${{ github.actor }}",
+              "password": "${{ secrets.GITHUB_TOKEN }}"
+            }]
           repositories: |
             [{
               "id": "github",
