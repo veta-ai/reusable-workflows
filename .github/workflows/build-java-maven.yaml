@@ -9,7 +9,7 @@ on:
         default: '21'
 
       sonar_project_key:
-        required: true
+        required: false
         type: string
 
 permissions:
@@ -101,15 +101,26 @@ jobs:
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
 
-      - name: Sonar Build Breaker
+      - name: Sonar Build Breaker with sonar-project-key
         env:
           GITHUB_REF_NAME: ${{ github.ref_name }}
         uses: jkumar19/sonar-build-breaker@v1.0.0
+        if: ${{ inputs.sonar_project_key != '' }}
         with:
           sonar_url: "https://sonarcloud.io"
           sonar_branch: ${{ env.GITHUB_REF_NAME }}
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           project_key: ${{ inputs.sonar_project_key }}
+
+      - name: Sonar Build Breaker without sonar-project-key
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+        uses: jkumar19/sonar-build-breaker@v1.0.0
+        if: ${{ !inputs.sonar_project_key || inputs.sonar_project_key == '' }}
+        with:
+          sonar_url: "https://sonarcloud.io"
+          sonar_branch: ${{ env.GITHUB_REF_NAME }}
+          sonar_token: ${{ secrets.SONAR_TOKEN }}
 
       # - name: Run Checkstyle
       #   run: mvn checkstyle:check

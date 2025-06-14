@@ -20,7 +20,7 @@ on:
         default: 'develop'
     
       sonar_project_key:
-        required: true
+        required: false
         type: string
 
 permissions:

@@ -15,7 +15,7 @@ on:
         default: '1.9.6'
       
       sonar_project_key:
-        required: true
+        required: false
         type: string
 
 permissions:

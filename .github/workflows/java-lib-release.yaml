@@ -8,7 +8,7 @@ on:
         type: string
         default: '21'
       sonar_project_key:
-        required: true
+        required: false
         type: string
 
 permissions:
