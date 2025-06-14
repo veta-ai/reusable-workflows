@@ -46,11 +46,6 @@ jobs:
         with:
           servers: |
             [{
-              "id": "nexus-snapshots",
-              "username": "${{ secrets.NEXUS_USERNAME }}",
-              "password": "${{ secrets.NEXUS_PASSWORD }}"
-            },
-            {
               "id": "github",
               "username": "${{ github.actor }}",
               "password": "${{ secrets.GITHUB_TOKEN }}"
