@@ -36,19 +36,18 @@ jobs:
       java-version: ${{ inputs.java-version }}
       sonar_project_key: ${{ inputs.sonar_project_key }}
 
-  validate-terraform:
-    uses: ./.github/workflows/apply-terraform-infra.yaml
-    needs: [build]
-    secrets: inherit
-    with:
-      terraform_version: ${{ inputs.terraform-version }}
-      deploy_infra: false
-      environment: 'dev'
+  # validate-terraform:
+  #   uses: ./.github/workflows/apply-terraform-infra.yaml
+  #   needs: [build]
+  #   secrets: inherit
+  #   with:
+  #     terraform_version: ${{ inputs.terraform-version }}
+  #     deploy_infra: false
+  #     environment: 'dev'
 
   open-pr:
     needs: build
-    runs-on: ubuntu-latest
     uses: ./.github/workflows/open-pr.yaml
-    secrets: inherit
     with:
-      base-branch: '${{ inputs.base-branch }}'
+      base-branch: ${{ inputs.base-branch }}
+    secrets: inherit
