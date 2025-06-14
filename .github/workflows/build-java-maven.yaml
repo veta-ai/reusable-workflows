@@ -55,7 +55,7 @@ jobs:
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
         with:
-          githubServer: true
+          githubServer: false
           servers: |
             [{
               "id": "github",
