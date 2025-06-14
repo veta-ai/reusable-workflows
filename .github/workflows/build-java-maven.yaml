@@ -39,15 +39,18 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
+      # - name: Configure Maven settings.xml
+      #   uses: s4u/maven-settings-action@v3.1.0
+      #   with:
+      #     servers: |
+      #       [{
+      #         "id": "github",
+      #         "username": "${{ github.actor }}",
+      #         "password": "${{ secrets.GITHUB_TOKEN }}"
+      #       }]
+
       - name: Configure Maven settings.xml
-        uses: s4u/maven-settings-action@v3.1.0
-        with:
-          servers: |
-            [{
-              "id": "github",
-              "username": "${{ github.actor }}",
-              "password": "${{ secrets.GITHUB_TOKEN }}"
-            }]
+        uses: s4u/maven-settings-action@v3.1.0    
 
       - name: Clean and Compile
         run: mvn clean compile
