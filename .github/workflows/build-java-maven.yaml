@@ -52,18 +52,16 @@ jobs:
       - name: Configure Maven settings.xml
         uses: s4u/maven-settings-action@v3.1.0    
         with:
-          servers: |
-            [{
-              "id": "github",
-              "username": "${{ github.actor }}",
-              "password": "${{ secrets.GITHUB_TOKEN }}"
-            }]
           repositories: |
             [{
               "id": "github",
               "url": "https://maven.pkg.github.com/veta-ai/veta-core-shared-libs",
-              "releases": true,
-              "snapshots": true
+              "releases": {
+                "enabled": true
+              },
+              "snapshots": {
+                  "enabled": true
+              }
             }]
 
       - name: see Maven settings.xml
