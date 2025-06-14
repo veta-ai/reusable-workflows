@@ -66,6 +66,9 @@ jobs:
               "snapshots": true
             }]
 
+      - name: see Maven settings.xml
+        run: cat ~/.m2/settings.xml
+
       - name: Clean and Compile
         run: mvn clean compile
 
