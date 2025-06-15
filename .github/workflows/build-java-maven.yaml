@@ -11,6 +11,10 @@ on:
       sonar_project_key:
         required: false
         type: string
+    
+    secrets:
+      SONAR_TOKEN:
+        required: true
 
 permissions:
   contents: read

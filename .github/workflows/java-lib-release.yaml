@@ -19,6 +19,7 @@ jobs:
   build:
     name: Build & Test
     uses: ./.github/workflows/build-java-maven.yaml
+    secrets: inherit
     with:
       java-version: ${{ inputs.java-version }}
       sonar_project_key: ${{ inputs.sonar_project_key }}
