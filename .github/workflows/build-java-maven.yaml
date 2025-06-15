@@ -43,6 +43,13 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
       # - name: Configure Maven settings.xml
       #   uses: s4u/maven-settings-action@v3.1.0
       #   with:
@@ -127,7 +134,7 @@ jobs:
         uses: jkumar19/sonar-build-breaker@v1.0.0
         with:
           sonar_url: "https://sonarcloud.io"
-          sonar_branch: ${{ env.GITHUB_REF_NAME }}
+          sonar_branch: master
           sonar_token: ${{ secrets.SONAR_TOKEN }}
           project_key: ${{ inputs.sonar_project_key }}
 
