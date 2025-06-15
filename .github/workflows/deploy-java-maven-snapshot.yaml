@@ -42,13 +42,21 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Configure Maven settings.xml
-        uses: s4u/maven-settings-action@v3.1.0
+        uses: s4u/maven-settings-action@v3.1.0    
         with:
+          githubServer: false
           servers: |
             [{
               "id": "github",
               "username": "${{ github.actor }}",
               "password": "${{ secrets.GH_PACKAGES_TOKEN }}"
+            }]
+          repositories: |
+            [{
+              "id": "github",
+              "url": "https://maven.pkg.github.com/veta-ai/veta-core-shared-libs",
+              "releases": { "enabled": true },
+              "snapshots": { "enabled": true }
             }]
 
       - name: Validate SNAPSHOT version
