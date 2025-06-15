@@ -40,7 +40,7 @@ jobs:
 
   create-docker-image:
     name: Create Docker Image
-    needs: [deploy-artifact]
+    needs: [build]
     secrets: inherit
     uses: ./.github/workflows/create-docker-image.yaml
     with:
