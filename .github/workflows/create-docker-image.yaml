@@ -43,13 +43,16 @@ jobs:
           IMAGE_TAG: ${{ steps.version.outputs.base_version }}
           LATEST_VERSION: ${{ inputs.latest-version }}
         run: |
-          BUILD_CMD="docker buildx build --platform linux/amd64 --tag $IMAGE_NAME:$IMAGE_TAG"
-          
+          BUILD_CMD="docker buildx build --provenance=false --platform linux/amd64 --tag $IMAGE_NAME:$IMAGE_TAG"
+
           if [ "$LATEST_VERSION" == "true" ]; then
             BUILD_CMD="$BUILD_CMD --tag $IMAGE_NAME:latest"
           fi
 
           BUILD_CMD="$BUILD_CMD --push --cache-to=type=inline ."
 
-          echo "Running build command: $BUILD_CMD"
-          eval $BUILD_CMD
+          echo "::group::Docker Build Command"
+          echo "$BUILD_CMD"
+          echo "::endgroup::"
+
+          eval "$BUILD_CMD"
