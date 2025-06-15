@@ -70,8 +70,8 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git commit -am "chore(release): finalize version ${{ steps.cleanup-version.outputs.final_version }}"
-          git push
+          # git commit -am "chore(release): finalize version ${{ steps.cleanup-version.outputs.final_version }}"
+          # git push
 
   create-tag:
     name: Tag, GitHub Release & Bump Develop
@@ -161,5 +161,5 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git commit -am "chore: start next snapshot $NEXT_VERSION on develop"
-          git push origin develop
+          # git commit -am "chore: start next snapshot $NEXT_VERSION on develop"
+          # git push origin develop
