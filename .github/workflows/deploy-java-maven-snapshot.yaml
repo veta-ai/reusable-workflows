@@ -48,7 +48,7 @@ jobs:
             [{
               "id": "github",
               "username": "${{ github.actor }}",
-              "password": "${{ secrets.GITHUB_TOKEN }}"
+              "password": "${{ secrets.GH_PACKAGES_TOKEN }}"
             }]
 
       - name: Validate SNAPSHOT version

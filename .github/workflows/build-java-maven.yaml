@@ -50,16 +50,6 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
-      # - name: Configure Maven settings.xml
-      #   uses: s4u/maven-settings-action@v3.1.0
-      #   with:
-      #     servers: |
-      #       [{
-      #         "id": "github",
-      #         "username": "${{ github.actor }}",
-      #         "password": "${{ secrets.GITHUB_TOKEN }}"
-      #       }]
-
       - name: Configure Maven settings.xml
         uses: s4u/maven-settings-action@v3.1.0    
         with:
@@ -68,7 +58,7 @@ jobs:
             [{
               "id": "github",
               "username": "${{ github.actor }}",
-              "password": "${{ secrets.GITHUB_TOKEN }}"
+              "password": "${{ secrets.GH_PACKAGES_TOKEN }}"
             }]
           repositories: |
             [{
