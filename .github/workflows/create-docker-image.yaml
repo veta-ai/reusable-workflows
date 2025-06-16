@@ -106,7 +106,7 @@ jobs:
           IMAGE_NAME: ghcr.io/${{ github.repository }}
           IMAGE_TAG: ${{ steps.version.outputs.base_version }}
         with:
-          image-ref: $IMAGE_NAME:$IMAGE_TAG
+          image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           format: table
           exit-code: 1
           severity: CRITICAL,HIGH
