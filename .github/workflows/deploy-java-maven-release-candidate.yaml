@@ -76,7 +76,7 @@ jobs:
         run: |
           git fetch --tags
           BASE=${{ steps.version.outputs.base_version }}
-          TAGS=$(git tag -l "${BASE}-RC*" || true)
+          TAGS=$(git tag -l "v${BASE}-RC*" || true)
           echo "Existing RC tags:"
           echo "$TAGS"
 
