@@ -17,6 +17,12 @@ on:
       sonar_project_key:
         required: false
         type: string
+      
+      scan-vulnerabilities:
+        description: 'Whether to scan the Docker image for vulnerabilities using Trivy'
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: write
@@ -46,6 +52,7 @@ jobs:
     uses: ./.github/workflows/create-docker-image.yaml
     with:
       java-version: ${{ inputs.java-version }}
+      scan-vulnerabilities: ${{ inputs.scan-vulnerabilities }}
 
   # apply-terraform:
   #   uses: ./.github/workflows/apply-terraform-infra.yaml

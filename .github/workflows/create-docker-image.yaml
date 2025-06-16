@@ -11,6 +11,11 @@ on:
         required: false
         type: boolean
         default: false
+      scan-vulnerabilities:
+        description: 'Whether to scan the Docker image for vulnerabilities using Trivy'
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -92,7 +97,7 @@ jobs:
             BUILD_CMD="$BUILD_CMD --tag $IMAGE_NAME:latest"
           fi
 
-          BUILD_CMD="$BUILD_CMD --push --cache-from=type=gha --cache-to=type=gha,mode=max ."
+          BUILD_CMD="$BUILD_CMD --push --cache-from=type=local,src=/tmp/.buildx-cache --cache-to=type=local,dest=/tmp/.buildx-cache ."
 
           echo "::group::Docker Build Command"
           echo "$BUILD_CMD"
@@ -100,14 +105,15 @@ jobs:
 
           eval "$BUILD_CMD"
 
-      # - name: Scan Docker Image for Vulnerabilities with Trivy
-      #   uses: aquasecurity/trivy-action@0.31.0
-      #   env:
-      #     IMAGE_NAME: ghcr.io/${{ github.repository }}
-      #     IMAGE_TAG: ${{ steps.version.outputs.base_version }}
-      #   with:
-      #     image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
-      #     format: table
-      #     exit-code: 1
-      #     severity: CRITICAL,HIGH
-      #     ignore-unfixed: true
+      - name: Scan Docker Image for Vulnerabilities with Trivy
+        uses: aquasecurity/trivy-action@0.31.0
+        if: ${{ inputs.scan-vulnerabilities }}
+        env:
+          IMAGE_NAME: ghcr.io/${{ github.repository }}
+          IMAGE_TAG: ${{ steps.version.outputs.base_version }}
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
