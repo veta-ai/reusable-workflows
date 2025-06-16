@@ -7,6 +7,10 @@ on:
         required: false
         type: string
         default: '21'
+      dry-run:
+        required: false
+        type: boolean
+        default: false 
 
 permissions:
   contents: write
@@ -71,7 +75,12 @@ jobs:
           mvn versions:set -DnewVersion=$FINAL_VERSION
           mvn versions:commit
 
-      - name: Deploy Final Release
+      - name: Skipping deploy to Nexus
+        if: ${{ inputs.dry-run == true }}
+        run: echo "🟡 Dry-run mode ON — skipping actual deploy to Nexus."
+
+      - name: Deploy to Nexus
+        if: ${{ inputs.dry-run != true }}
         run: mvn deploy -DskipTests --batch-mode
 
       - name: Commit Final Version

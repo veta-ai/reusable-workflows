@@ -35,8 +35,10 @@ jobs:
     name: Prepare & Deploy Final Version
     needs: build
     uses: ./.github/workflows/deploy-java-maven-release.yaml
+    secrets: inherit
     with:
       java-version: ${{ inputs.java-version }}
+      dry-run: true
 
   create-docker-image:
     name: Create Docker Image

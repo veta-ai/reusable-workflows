@@ -30,4 +30,5 @@ jobs:
     uses: ./.github/workflows/deploy-java-maven-release.yaml
     with:
       java-version: ${{ inputs.java-version }}
+      dry-run: true
     secrets: inherit
