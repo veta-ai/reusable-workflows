@@ -65,6 +65,7 @@ jobs:
         id: current-version
         run: |
           VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Detected version: $VERSION"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Finalize Version (remove RC)
@@ -81,7 +82,7 @@ jobs:
 
       - name: Deploy to Nexus
         if: ${{ inputs.dry-run != true }}
-        run: mvn deploy -DskipTests --batch-mode
+        run: mvn clean deploy -DskipTests --batch-mode
 
       - name: Commit Final Version
         run: |

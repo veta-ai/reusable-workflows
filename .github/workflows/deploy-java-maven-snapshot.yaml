@@ -73,4 +73,4 @@ jobs:
 
       - name: Deploy to Nexus
         if: ${{ inputs.dry-run != true }}
-        run: mvn deploy -DskipTests --batch-mode
+        run: mvn clean deploy -DskipTests --batch-mode

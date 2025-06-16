@@ -61,8 +61,15 @@ jobs:
         id: version
         run: |
           CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Detected version: $CURRENT_VERSION"
           BASE_VERSION=$(echo $CURRENT_VERSION | sed 's/-.*//')
           echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+
+      # - name: Validate branch
+      #   if: github.ref != 'refs/heads/release' && github.ref != 'refs/heads/main'
+      #   run: |
+      #     echo "🚫 RCs devem ser gerados apenas de develop ou main"
+      #     exit 1
 
       - name: Calculate Next RC Version
         id: rc
@@ -88,7 +95,7 @@ jobs:
           mvn versions:commit
 
       - name: Deploy RC Version
-        run: mvn deploy -DskipTests --batch-mode
+        run: mvn clean deploy -DskipTests --batch-mode
 
       - name: Commit RC Version
         run: |
