@@ -32,7 +32,7 @@ jobs:
 
       - name: Clone Infra Repo and Update Image Tag
         run: |
-          git clone https://x-access-token:${{ secrets.INFRA_REPO_TOKEN }}@github.com/${{ vars.organization }}/infra-k8s-deployments.git
+          git clone https://x-access-token:${{ secrets.GH_PACKAGES_TOKEN }}@github.com/${{ vars.organization }}/infra-k8s-deployments.git
           cd infra-k8s-deployments/apps/${{ github.repository }}/${{ inputs.namespace }}
           sed -i "s|image: .*|image: ${{ inputs.image-docker }} |" deployment.yaml
           git config --global user.name "CI Bot"
