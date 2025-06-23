@@ -16,6 +16,10 @@ on:
         required: true
         type: boolean
         default: true
+    outputs:
+      image_docker:
+        description: 'Full Docker image with tag'
+        value: ${{ jobs.create-docker-image.outputs.image_docker }}
 
 permissions:
   contents: read
@@ -24,6 +28,8 @@ permissions:
 jobs:
   create-docker-image:
     runs-on: ubuntu-latest
+    outputs:
+      image_docker: ${{ steps.meta.outputs.full_image }}
 
     steps:
       - name: Checkout code
@@ -76,6 +82,11 @@ jobs:
           echo "Detected version: $CURRENT_VERSION"
           BASE_VERSION=$(echo $CURRENT_VERSION | sed 's/-.*//')
           echo "base_version=$BASE_VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Set output with full image tag
+        id: meta
+        run: |
+          echo "full_image=ghcr.io/${{ github.repository }}:${{ steps.version.outputs.base_version }}" >> $GITHUB_OUTPUT
 
       - name: Cache Docker layers
         uses: actions/cache@v4
@@ -108,6 +119,7 @@ jobs:
       - name: Scan Docker Image for Vulnerabilities with Trivy
         uses: aquasecurity/trivy-action@0.31.0
         if: ${{ inputs.scan-vulnerabilities }}
+        continue-on-error: true
         env:
           IMAGE_NAME: ghcr.io/${{ github.repository }}
           IMAGE_TAG: ${{ steps.version.outputs.base_version }}

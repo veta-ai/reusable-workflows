@@ -3,7 +3,6 @@ name: CI - Snapshot Deploy (Java Application)
 on:
   workflow_call:
     inputs:
-    
       java-version:
         required: false
         type: string
@@ -17,7 +16,7 @@ on:
       sonar_project_key:
         required: false
         type: string
-      
+
       scan-vulnerabilities:
         description: 'Whether to scan the Docker image for vulnerabilities using Trivy'
         required: true
@@ -47,12 +46,21 @@ jobs:
 
   create-docker-image:
     name: Create Docker Image
+    uses: ./.github/workflows/create-docker-image.yaml
     needs: [build]
     secrets: inherit
-    uses: ./.github/workflows/create-docker-image.yaml
     with:
       java-version: ${{ inputs.java-version }}
       scan-vulnerabilities: ${{ inputs.scan-vulnerabilities }}
+
+  deploy-argo-cd:
+    name: Deploy to Argo CD
+    uses: ./.github/workflows/deploy-argo-cd.yaml
+    needs: [create-docker-image]
+    secrets: inherit
+    with:
+      namespace: 'dev'
+      image-docker: ${{ needs.create-docker-image.outputs.image_docker }}
 
   # apply-terraform:
   #   uses: ./.github/workflows/apply-terraform-infra.yaml

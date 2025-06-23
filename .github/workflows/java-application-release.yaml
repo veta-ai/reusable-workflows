@@ -56,6 +56,15 @@ jobs:
       latest-version: true
       scan-vulnerabilities: ${{ inputs.scan-vulnerabilities }}
 
+  deploy-argo-cd:
+    name: Deploy to Argo CD
+    uses: ./.github/workflows/deploy-argo-cd.yaml
+    needs: [create-docker-image]
+    secrets: inherit
+    with:
+      namespace: 'prod'
+      image-docker: ${{ needs.create-docker-image.outputs.image_docker }}
+
   # apply-terraform:
   #   uses: ./.github/workflows/apply-terraform-infra.yaml
   #   needs: [create-docker-image]
