@@ -84,8 +84,8 @@ jobs:
             },
             {
               "id": "nexus-releases",
-              "mirrorOf": "nexus-snapshots",
-              "url": "http://18.223.125.35:8081/repository/maven-snapshots/"
+              "mirrorOf": "nexus-releases",
+              "url": "http://18.223.125.35:8081/repository/maven-releases/"
             }]
 
       # - name: Configure Maven settings.xml
