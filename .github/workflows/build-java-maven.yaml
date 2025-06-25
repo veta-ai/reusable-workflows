@@ -76,6 +76,17 @@ jobs:
               "releases": { "enabled": false },
               "snapshots": { "enabled": true }
             }]
+          mirrors: |
+            [{
+              "id": "nexus-snapshots",
+              "mirrorOf": "nexus-snapshots",
+              "url": "http://18.223.125.35:8081/repository/maven-snapshots/"
+            },
+            {
+              "id": "nexus-releases",
+              "mirrorOf": "nexus-snapshots",
+              "url": "http://18.223.125.35:8081/repository/maven-snapshots/"
+            }]
 
       # - name: Configure Maven settings.xml
       #   uses: s4u/maven-settings-action@v3.1.0    
