@@ -55,6 +55,19 @@ jobs:
               "username": "${{ secrets.NEXUS_USERNAME }}",
               "password": "${{ secrets.NEXUS_PASSWORD }}"
             }]
+          repositories: |
+            [{
+              "id": "nexus-releases",
+              "url": "http://18.223.125.35:8081/repository/maven-releases/",
+              "releases": { "enabled": true },
+              "snapshots": { "enabled": false }
+            },
+            {
+              "id": "nexus-snapshots",
+              "url": "http://18.223.125.35:8081/repository/maven-snapshots",
+              "releases": { "enabled": false },
+              "snapshots": { "enabled": true }
+            }]
 
       # - name: Configure Maven settings.xml
       #   uses: s4u/maven-settings-action@v3.1.0    
