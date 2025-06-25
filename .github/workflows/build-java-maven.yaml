@@ -82,6 +82,15 @@ jobs:
       #         "snapshots": { "enabled": true }
       #       }]
 
+      - name: Validate SNAPSHOT version
+        id: extract_version
+        if: startsWith(github.ref_name, 'feature/')
+        run: |
+          VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Detected version: $VERSION"
+          [[ "$VERSION" == *-SNAPSHOT ]] || (echo "ERROR: Version is not a SNAPSHOT!" && exit 1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Clean and Compile
         run: mvn clean compile
 
