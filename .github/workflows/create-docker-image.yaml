@@ -81,11 +81,13 @@ jobs:
           mirrors: |
             [{
               "id": "nexus-snapshots",
+              "name": "Nexus Snapshots",
               "mirrorOf": "nexus-snapshots",
               "url": "http://18.223.125.35:8081/repository/maven-snapshots/"
             },
             {
               "id": "nexus-releases",
+              "name": "Nexus Releases",
               "mirrorOf": "nexus-releases",
               "url": "http://18.223.125.35:8081/repository/maven-releases/"
             }]
