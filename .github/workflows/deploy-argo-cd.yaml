@@ -38,5 +38,5 @@ jobs:
           git config --global user.name "CI Bot"
           git config --global user.email "ci@github.com"
           git add deployment.yaml
-          git commit -m "chore(deploy): update image tag to ${{ inputs.image-docker }} for namespace ${{ inputs.namespace }}"
+          git commit --allow-empty -m "chore(deploy): update image tag to ${{ inputs.image-docker }} for namespace ${{ inputs.namespace }}"
           git push
