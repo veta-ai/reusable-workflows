@@ -11,6 +11,11 @@ on:
       sonar_project_key:
         required: false
         type: string
+
+      type_application:
+        required: false
+        type: string
+        default: 'java-library'
     
     secrets:
       SONAR_TOKEN:
@@ -125,6 +130,12 @@ jobs:
 
       - name: Run Tests
         run: mvn clean test -T 1C
+
+      - name: Integrated Tests
+        if: ${{ inputs.type_application }} == 'java-application'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn clean test -Dtest=**.integration.**.*
 
       - name: Run SonarQube Analysis
         env:

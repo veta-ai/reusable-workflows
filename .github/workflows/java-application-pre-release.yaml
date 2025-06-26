@@ -36,6 +36,7 @@ jobs:
     with:
       java-version: ${{ inputs.java-version }}
       sonar_project_key: ${{ inputs.sonar_project_key }}
+      type_application: 'java-application'
 
   deploy-artifact:
     name: Validate and Version RC
