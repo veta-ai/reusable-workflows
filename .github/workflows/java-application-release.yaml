@@ -38,15 +38,6 @@ jobs:
       sonar_project_key: ${{ inputs.sonar_project_key }}
       type_application: 'java-application'
 
-  deploy-artifact:
-    name: Prepare & Deploy Final Version
-    needs: build
-    uses: ./.github/workflows/deploy-java-maven-release.yaml
-    secrets: inherit
-    with:
-      java-version: ${{ inputs.java-version }}
-      dry-run: true
-
   create-docker-image:
     name: Create Docker Image
     needs: [build]
@@ -56,6 +47,15 @@ jobs:
       java-version: ${{ inputs.java-version }}
       latest-version: true
       scan-vulnerabilities: ${{ inputs.scan-vulnerabilities }}
+
+  deploy-artifact:
+    name: Prepare & Deploy Final Version
+    needs: create-docker-image
+    uses: ./.github/workflows/deploy-java-maven-release.yaml
+    secrets: inherit
+    with:
+      java-version: ${{ inputs.java-version }}
+      dry-run: true
 
   deploy-argo-cd:
     name: Deploy to Argo CD
