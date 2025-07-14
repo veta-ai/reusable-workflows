@@ -134,7 +134,6 @@ jobs:
   integrated-tests:
     name: Integrated Tests
     runs-on: ubuntu-latest
-    if: ${{ inputs.type_application }} == 'java-application'
     needs: build
 
     steps:
@@ -203,6 +202,7 @@ jobs:
             }]
 
       - name: Integrated Tests
+        if: ${{ inputs.type_application }} == 'java-application'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn clean test -Dtest=**.integration.**.*
