@@ -131,12 +131,12 @@ jobs:
       - name: Run Tests
         run: mvn clean install
 
-      - name: Upload JaCoCo Coverage Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jacoco-report
-          path: target/site/jacoco/
+      # - name: Upload JaCoCo Coverage Report
+      #   if: always()
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: jacoco-report
+      #     path: target/site/jacoco/
 
   integrated-tests:
     name: Integrated Tests
@@ -215,21 +215,21 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn clean test -Dtest=**.integration.**.*
 
-      - name: Check if cucumber.html exists
-        id: check_cucumber
-        run: |
-          if [ -f target/cucumber.html ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "exists=false" >> $GITHUB_OUTPUT
-          fi
+      # - name: Check if cucumber.html exists
+      #   id: check_cucumber
+      #   run: |
+      #     if [ -f target/cucumber.html ]; then
+      #       echo "exists=true" >> $GITHUB_OUTPUT
+      #     else
+      #       echo "exists=false" >> $GITHUB_OUTPUT
+      #     fi
       
-      - name: Upload Cucumber HTML report
-        if: steps.check_cucumber.outputs.exists == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: cucumber-report
-          path: target/cucumber.html
+      # - name: Upload Cucumber HTML report
+      #   if: steps.check_cucumber.outputs.exists == 'true'
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: cucumber-report
+      #     path: target/cucumber.html
 
   run-sonar-test:
     name: Run SonarQube Test
